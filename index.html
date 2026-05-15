@@ -1,0 +1,4547 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>収益不動産 投資シミュレーター</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&family=Shippori+Mincho:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f4f1ec;
+    --surface:#ffffff;
+    --surface-2:#faf8f4;
+    --ink:#1a1a1a;
+    --ink-2:#2c2c2c;
+    --muted:#71716c;
+    --soft:#a8a59f;
+    --accent:#b8543e;
+    --accent-2:#2f3e3a;
+    --accent-3:#c9a567;
+    --positive:#2f6f4f;
+    --negative:#a73a2a;
+    --border:rgba(26,26,26,0.10);
+    --border-strong:rgba(26,26,26,0.20);
+    --shadow:0 1px 2px rgba(26,26,26,0.04), 0 8px 24px rgba(26,26,26,0.06);
+    --shadow-lg:0 2px 4px rgba(26,26,26,0.05), 0 20px 40px rgba(26,26,26,0.10);
+    --radius:10px;
+    --radius-sm:6px;
+    --display:"Shippori Mincho", "Yu Mincho", "游明朝", serif;
+    --body:"Noto Sans JP", system-ui, sans-serif;
+    --mono:"JetBrains Mono", "SF Mono", Menlo, monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:var(--body);
+    background:var(--bg);
+    color:var(--ink);
+    font-size:14px;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+    font-feature-settings:"palt";
+  }
+
+  /* ────────────── SHARED HTML BANNER ────────────── */
+  .shared-banner{
+    background:linear-gradient(135deg, var(--accent), #d06e54);
+    color:#fff;
+    position:sticky; top:0; z-index:60;
+    font-size:12.5px;
+  }
+  .shared-banner-inner{
+    max-width:1280px; margin:0 auto;
+    padding:8px 22px;
+    display:flex; align-items:center; gap:12px;
+  }
+  .shared-banner .shared-tag{
+    font-family:var(--mono); font-size:9.5px;
+    font-weight:700; letter-spacing:0.18em;
+    background:rgba(255,255,255,0.22);
+    padding:2px 9px; border-radius:99px;
+    flex-shrink:0;
+  }
+  .shared-banner .shared-msg{
+    flex:1; min-width:0;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .shared-banner .shared-msg b{ font-weight:600 }
+  .shared-banner .shared-dismiss{
+    background:rgba(255,255,255,0.15);
+    border:0; color:#fff;
+    width:22px; height:22px; border-radius:50%;
+    cursor:pointer; font-size:14px; line-height:1;
+    flex-shrink:0; transition:background 0.15s;
+  }
+  .shared-banner .shared-dismiss:hover{
+    background:rgba(255,255,255,0.30);
+  }
+  @media print{
+    .shared-banner{display:none}
+  }
+
+  /* ────────────── SHARED (READ-ONLY) MODE ────────────── */
+  body.shared-readonly .input,
+  body.shared-readonly .textarea,
+  body.shared-readonly select.input,
+  body.shared-readonly .field-label-edit,
+  body.shared-readonly .unit-table input,
+  body.shared-readonly .cost-row input,
+  body.shared-readonly .dyn-row input,
+  body.shared-readonly input[type="date"]{
+    pointer-events:none !important;
+    background:transparent !important;
+    border-color:transparent !important;
+    box-shadow:none !important;
+    color:var(--ink) !important;
+    -webkit-text-fill-color:var(--ink) !important;
+    opacity:1 !important;
+  }
+  body.shared-readonly select.input{
+    -webkit-appearance:none; appearance:none;
+  }
+  body.shared-readonly .input.num,
+  body.shared-readonly .unit-table .num input{
+    color:var(--ink) !important;
+    -webkit-text-fill-color:var(--ink) !important;
+  }
+  body.shared-readonly .input.readonly{
+    background:transparent !important;
+  }
+  /* Hide all edit-affordance UI */
+  body.shared-readonly .dyn-add,
+  body.shared-readonly .dyn-row .rm,
+  body.shared-readonly .unit-table .rm,
+  body.shared-readonly #btn-sample,
+  body.shared-readonly #btn-save,
+  body.shared-readonly #btn-load,
+  body.shared-readonly #btn-reset,
+  body.shared-readonly .section-reset-btn,
+  body.shared-readonly .pdf-upload-btn,
+  body.shared-readonly .pdf-remove,
+  body.shared-readonly .exit-toggle,
+  body.shared-readonly .field-label-edit{
+    pointer-events:none !important;
+  }
+  body.shared-readonly .dyn-add,
+  body.shared-readonly .dyn-row .rm,
+  body.shared-readonly .unit-table .rm,
+  body.shared-readonly #btn-sample,
+  body.shared-readonly #btn-save,
+  body.shared-readonly #btn-load,
+  body.shared-readonly #btn-reset,
+  body.shared-readonly .section-reset-btn,
+  body.shared-readonly .pdf-upload-btn,
+  body.shared-readonly .pdf-remove{
+    display:none !important;
+  }
+  /* Exit strategy toggle becomes display-only */
+  body.shared-readonly .exit-opt:not(input:checked + .exit-card){opacity:0.4}
+  body.shared-readonly .exit-opt input{display:none}
+  body.shared-readonly .exit-card{cursor:default}
+  body.shared-readonly .exit-opt:hover .exit-card{transform:none}
+  /* Make inputs visually like display text in shared mode */
+  body.shared-readonly .input,
+  body.shared-readonly .textarea{
+    padding-left:2px; padding-right:2px;
+  }
+  body.shared-readonly .input-with-unit .input{padding-right:30px}
+  body.shared-readonly textarea.textarea{
+    resize:none;
+  }
+  body.shared-readonly .map-link{pointer-events:auto}
+  /* Re-enable PDF/image viewer controls in shared/read-only mode */
+  body.shared-readonly .pdf-open,
+  body.shared-readonly .pdf-viewer,
+  body.shared-readonly .pdf-viewer *,
+  body.shared-readonly .jourei-link{
+    pointer-events:auto !important;
+  }
+  body.shared-readonly .pdf-viewer input{pointer-events:none}
+
+  /* ────────────── REPORT MODE (shared HTML view-only) ────────────── */
+  body.report-mode .tabs{ display:none }
+  body.report-mode .panel{
+    display:block !important;
+    animation:none;
+  }
+  body.report-mode main{ padding-top:14px }
+  .report-step-head{
+    max-width:1280px;
+    margin:30px 0 14px 0;
+    padding:14px 22px 12px;
+    background:linear-gradient(135deg, var(--accent-2) 0%, #1f2b27 100%);
+    color:#f4f1ec;
+    border-radius:var(--radius);
+    border-left:4px solid var(--accent);
+    display:flex; align-items:baseline; gap:18px;
+    flex-wrap:wrap;
+    box-shadow:0 2px 10px rgba(0,0,0,0.06);
+  }
+  .report-step-head:first-of-type{ margin-top:0 }
+  .report-step-num{
+    font-family:var(--mono);
+    font-size:11px; letter-spacing:0.22em;
+    color:var(--accent);
+    text-transform:uppercase;
+    font-weight:600;
+  }
+  .report-step-title{
+    font-family:var(--display);
+    font-size:22px; font-weight:600; margin:0;
+    letter-spacing:0.03em;
+  }
+  .report-step-sub{
+    font-family:var(--mono);
+    font-size:10.5px; letter-spacing:0.15em;
+    text-transform:uppercase;
+    color:rgba(244,241,236,0.55);
+    margin-left:auto;
+  }
+  /* Print: STEPs start on new pages */
+  @media print{
+    body.report-mode .report-step-head{
+      page-break-before:always;
+      background:#fff !important;
+      color:var(--ink) !important;
+      border:1px solid #999 !important;
+      border-left:4px solid var(--accent) !important;
+      box-shadow:none !important;
+    }
+    body.report-mode .report-step-head:first-of-type{ page-break-before:auto }
+    body.report-mode .report-step-num{ color:var(--accent) !important }
+    body.report-mode .report-step-sub{ color:var(--muted) !important }
+    body.report-mode .panel{ page-break-after:auto }
+    body.report-mode .section{ page-break-inside:avoid }
+    body.report-mode .shared-banner{display:none !important}
+  }
+  /* In report mode, switch attachment list to a thumbnail gallery */
+  body.report-mode .pdf-list{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(180px, 1fr));
+    gap:10px;
+  }
+  body.report-mode .pdf-item{
+    flex-direction:column; align-items:stretch;
+    padding:0; overflow:hidden;
+    background:var(--surface);
+  }
+  body.report-mode .pdf-item .pdf-icon-sm{
+    width:100%; height:130px;
+    border-radius:0;
+    font-size:13px;
+  }
+  body.report-mode .pdf-item .pdf-icon-img{
+    background-size:cover;
+  }
+  body.report-mode .pdf-item .pdf-name,
+  body.report-mode .pdf-item .pdf-size{
+    padding:4px 10px 0;
+    font-size:11px;
+  }
+  body.report-mode .pdf-item .pdf-name{
+    white-space:normal; padding-top:8px;
+    line-height:1.4;
+  }
+  body.report-mode .pdf-item .pdf-size{
+    padding-bottom:8px;
+  }
+  body.report-mode .pdf-item .pdf-open{
+    margin:0 8px 8px; width:auto; height:26px;
+    font-size:11px; padding:0 10px;
+    pointer-events:auto !important;
+  }
+  body.report-mode .pdf-upload-btn{display:none}
+
+  /* ────────────── PDF VIEWER MODAL ────────────── */
+  .pdf-viewer{
+    position:fixed; inset:0;
+    background:rgba(20,20,18,0.85);
+    display:none; align-items:center; justify-content:center;
+    z-index:200; padding:30px;
+  }
+  .pdf-viewer.active{display:flex}
+  .pdf-viewer-box{
+    background:var(--surface);
+    border-radius:var(--radius);
+    width:100%; max-width:1100px;
+    height:100%; max-height:900px;
+    display:flex; flex-direction:column;
+    overflow:hidden;
+    box-shadow:0 25px 80px rgba(0,0,0,0.5);
+  }
+  .pdf-viewer-head{
+    display:flex; align-items:center; gap:10px;
+    padding:11px 16px;
+    border-bottom:1px solid var(--border);
+    background:var(--surface-2);
+  }
+  .pdf-viewer-head .pdf-viewer-title{
+    flex:1; font-family:var(--display);
+    font-size:13px; color:var(--ink); font-weight:600;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .pdf-viewer-head .pdf-viewer-download{
+    padding:5px 11px; font-size:11.5px;
+    text-decoration:none;
+    background:var(--ink); color:var(--surface);
+    border-radius:var(--radius-sm);
+    transition:all 0.15s;
+  }
+  .pdf-viewer-head .pdf-viewer-download:hover{
+    background:var(--accent);
+  }
+  .pdf-viewer-head .pdf-viewer-close{
+    width:28px; height:28px;
+    border:1px solid var(--border);
+    background:var(--surface);
+    border-radius:50%;
+    cursor:pointer;
+    font-size:16px; line-height:1;
+    color:var(--ink-2);
+  }
+  .pdf-viewer-head .pdf-viewer-close:hover{
+    border-color:var(--negative);
+    color:var(--negative);
+  }
+  .pdf-viewer-body{
+    flex:1; background:#3a3a37;
+    overflow:hidden;
+  }
+  .pdf-viewer-body iframe,
+  .pdf-viewer-body object,
+  .pdf-viewer-body embed{
+    width:100%; height:100%; border:0;
+    display:block;
+  }
+  /* Image mode: center & contain */
+  .pdf-viewer-body.pdf-viewer-body-img{
+    display:flex; align-items:center; justify-content:center;
+    overflow:auto;
+    padding:20px;
+  }
+  .pdf-viewer-body.pdf-viewer-body-img img{
+    max-width:100%; max-height:100%;
+    width:auto; height:auto;
+    object-fit:contain;
+    box-shadow:0 6px 30px rgba(0,0,0,0.4);
+    border-radius:4px;
+  }
+  .pdf-viewer-fallback{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    height:100%; color:#fff; gap:14px; padding:40px;
+    text-align:center;
+  }
+  .pdf-viewer-fallback p{margin:0; font-size:13px; line-height:1.7; max-width:480px}
+  .pdf-viewer-fallback .pdf-viewer-dl-big{
+    padding:10px 22px;
+    background:var(--accent); color:#fff;
+    text-decoration:none;
+    border-radius:var(--radius);
+    font-size:13px; font-weight:600;
+  }
+
+  /* ────────────── HEADER ────────────── */
+  .topbar{
+    position:sticky; top:0; z-index:50;
+    background:rgba(244,241,236,0.92);
+    backdrop-filter:saturate(180%) blur(14px);
+    -webkit-backdrop-filter:saturate(180%) blur(14px);
+    border-bottom:1px solid var(--border);
+  }
+  .topbar-inner{
+    max-width:1280px; margin:0 auto;
+    padding:9px 22px;
+    display:flex; align-items:center; gap:18px;
+    flex-wrap:wrap;
+  }
+  .brand{display:flex; align-items:baseline; gap:12px; min-width:0}
+  .brand-mark{
+    font-family:var(--display);
+    font-size:18px; font-weight:600;
+    letter-spacing:0.02em; color:var(--ink);
+    white-space:nowrap;
+  }
+  .brand-mark .accent{color:var(--accent)}
+  .brand-sub{
+    font-size:10.5px; color:var(--muted);
+    letter-spacing:0.18em; text-transform:uppercase;
+    border-left:1px solid var(--border-strong);
+    padding-left:12px; white-space:nowrap;
+  }
+  .actions{margin-left:auto; display:flex; gap:6px; flex-wrap:wrap}
+  .btn{
+    appearance:none; border:1px solid var(--border-strong);
+    background:var(--surface); color:var(--ink);
+    padding:5px 11px; border-radius:var(--radius-sm);
+    font-family:var(--body); font-size:12px; font-weight:500;
+    letter-spacing:0.02em; cursor:pointer;
+    display:inline-flex; align-items:center; gap:5px;
+    transition:all 0.15s ease;
+  }
+  .btn:hover{background:var(--ink); color:var(--surface); border-color:var(--ink)}
+  .btn.primary{background:var(--ink); color:var(--surface); border-color:var(--ink)}
+  .btn.primary:hover{background:var(--accent); border-color:var(--accent)}
+  .btn.warn:hover{background:var(--negative); border-color:var(--negative); color:#fff}
+  .btn svg{width:12px; height:12px}
+
+  /* ────────────── TABS ────────────── */
+  .tabs{
+    max-width:1280px; margin:0 auto;
+    padding:0 22px;
+    display:flex; gap:0;
+    border-bottom:1px solid var(--border);
+  }
+  .tab{
+    appearance:none; background:none; border:0;
+    padding:11px 4px; margin-right:28px;
+    font-family:var(--display); font-size:14px; font-weight:500;
+    color:var(--muted); cursor:pointer; position:relative;
+    letter-spacing:0.03em;
+    transition:color 0.2s ease;
+  }
+  .tab .step{
+    font-family:var(--mono); font-size:10px;
+    color:var(--soft); margin-right:6px;
+    letter-spacing:0.1em;
+  }
+  .tab:hover{color:var(--ink)}
+  .tab.active{color:var(--ink)}
+  .tab.active::after{
+    content:""; position:absolute;
+    left:0; right:0; bottom:-1px; height:2px;
+    background:var(--accent);
+  }
+  .tab.active .step{color:var(--accent)}
+
+  /* ────────────── MAIN ────────────── */
+  main{max-width:1280px; margin:0 auto; padding:18px 22px 60px}
+  .panel{display:none}
+  .panel.active{display:block; animation:fadeIn 0.3s ease}
+  @keyframes fadeIn{from{opacity:0; transform:translateY(4px)} to{opacity:1; transform:translateY(0)}}
+
+  /* ────────────── SECTIONS ────────────── */
+  .section{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    margin-bottom:14px;
+    overflow:hidden;
+  }
+  .section-head{
+    display:flex; align-items:baseline; gap:12px;
+    padding:11px 18px 10px;
+    border-bottom:1px solid var(--border);
+    position:relative;
+  }
+  .section-head .section-actions{
+    margin-left:auto;
+    display:flex; align-items:center; gap:6px;
+    flex-shrink:0;
+    align-self:center;
+  }
+  .section-head .section-reset-btn{
+    width:24px; height:24px;
+    display:flex; align-items:center; justify-content:center;
+    border:1px solid var(--border);
+    background:var(--surface-2);
+    border-radius:5px;
+    cursor:pointer;
+    font-size:14px; font-weight:400; line-height:1;
+    color:var(--muted);
+    transition:all 0.15s ease;
+    user-select:none;
+    flex-shrink:0;
+    font-family:var(--mono);
+  }
+  .section-head .section-reset-btn:hover{
+    border-color:var(--negative);
+    color:var(--negative);
+    background:var(--surface);
+    transform:rotate(-90deg);
+  }
+  .section-head .collapse-btn{
+    width:24px; height:24px;
+    display:flex; align-items:center; justify-content:center;
+    border:1px solid var(--border);
+    background:var(--surface-2);
+    border-radius:5px;
+    cursor:pointer;
+    font-size:15px; font-weight:300; line-height:1;
+    color:var(--ink-2);
+    transition:all 0.15s ease;
+    user-select:none;
+    flex-shrink:0;
+  }
+  .section-head .collapse-btn:hover{
+    border-color:var(--accent);
+    color:var(--accent);
+    background:var(--surface);
+  }
+  .section.collapsed .section-body{ display:none }
+  .section.collapsed .section-head{ border-bottom:none; padding-bottom:11px }
+  .section.collapsed .collapse-btn::before{ content:'＋' }
+  .section:not(.collapsed) .collapse-btn::before{ content:'−' }
+  .section-head h2{
+    font-family:var(--display); font-size:15px; font-weight:600;
+    margin:0; letter-spacing:0.02em;
+  }
+  .section-head .desc{
+    font-size:11.5px; color:var(--muted);
+    letter-spacing:0.02em;
+  }
+  .section-head .ribbon{
+    font-family:var(--mono); font-size:9.5px;
+    color:var(--accent); letter-spacing:0.15em;
+    text-transform:uppercase;
+  }
+  .section-body{padding:14px 18px 16px}
+
+  /* ────────────── TWO-COLUMN SUB-SECTION ────────────── */
+  .two-col-section{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:18px;
+  }
+  @media (max-width:900px){
+    .two-col-section{grid-template-columns:1fr; gap:14px}
+  }
+  .sub-block{
+    display:flex; flex-direction:column;
+    min-width:0;
+  }
+  .sub-block-title{
+    font-family:var(--display);
+    font-size:12px; font-weight:600;
+    color:var(--accent-2);
+    letter-spacing:0.06em;
+    padding-bottom:5px; margin-bottom:8px;
+    border-bottom:1px solid var(--border);
+  }
+  .sub-block .dyn-list{
+    margin-bottom:6px;
+  }
+
+  /* ────────────── GRID ────────────── */
+  .grid{display:grid; gap:10px 16px}
+  .grid.cols-2{grid-template-columns:1fr 1fr}
+  .grid.cols-3{grid-template-columns:repeat(3, 1fr)}
+  .grid.cols-4{grid-template-columns:repeat(4, 1fr)}
+  @media (max-width:900px){
+    .grid.cols-2,.grid.cols-3,.grid.cols-4{grid-template-columns:1fr}
+  }
+
+  /* ────────────── FIELDS ────────────── */
+  .field{display:flex; flex-direction:column; gap:3px; min-width:0}
+  .field label{
+    font-size:11px; color:var(--muted);
+    letter-spacing:0.04em; font-weight:500;
+  }
+  .field-label-edit{
+    background:transparent; border:0; border-bottom:1px dashed transparent;
+    font-family:var(--body); font-size:11px; color:var(--muted);
+    letter-spacing:0.04em; font-weight:500;
+    padding:0 0 1px 0; width:100%;
+    transition:border-color 0.15s ease;
+  }
+  .field-label-edit:hover{border-bottom-color:var(--accent-3)}
+  .field-label-edit:focus{outline:none; border-bottom-color:var(--accent); color:var(--ink)}
+
+  .input, .textarea, select.input{
+    appearance:none; width:100%;
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+    padding:6px 10px;
+    font-family:var(--body); font-size:13px;
+    color:var(--ink); background:var(--surface);
+    transition:border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .input:focus, .textarea:focus, select.input:focus{
+    outline:none; border-color:var(--ink);
+    box-shadow:0 0 0 3px rgba(26,26,26,0.06);
+  }
+  .input.num{font-family:var(--mono); text-align:right; font-feature-settings:"tnum"}
+  .input.readonly{background:var(--surface-2); color:var(--ink-2)}
+  .textarea{min-height:56px; resize:vertical; line-height:1.55}
+  .input-with-unit{position:relative}
+  .input-with-unit .unit{
+    position:absolute; right:10px; top:50%;
+    transform:translateY(-50%);
+    font-size:11px; color:var(--muted);
+    pointer-events:none; font-family:var(--mono);
+  }
+  .input-with-unit .input{padding-right:36px}
+  .hint{font-size:10.5px; color:var(--muted); font-family:var(--mono); margin-top:1px; line-height:1.4}
+  .hint.derived{color:var(--accent-2)}
+
+  /* ────────────── MAP ────────────── */
+  .map-wrap{
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+    overflow:hidden;
+    background:var(--surface-2);
+    height:150px; position:relative;
+  }
+  .map-wrap iframe{border:0; width:100%; height:100%; display:block}
+  .map-empty{
+    display:flex; align-items:center; justify-content:center;
+    height:100%; color:var(--muted); font-size:12px;
+    letter-spacing:0.05em; text-align:center;
+    padding:0 20px;
+  }
+  .map-link{
+    display:inline-flex; align-items:center; gap:6px;
+    color:var(--accent); text-decoration:none; font-size:12px;
+    margin-top:6px; font-weight:500;
+  }
+  .map-link:hover{text-decoration:underline}
+
+  /* ────────────── DYNAMIC LISTS ────────────── */
+  .dyn-list{display:flex; flex-direction:column; gap:6px}
+  .dyn-row{
+    display:grid; gap:6px; align-items:center;
+    padding:6px 8px; background:var(--surface-2);
+    border:1px solid var(--border); border-radius:var(--radius-sm);
+  }
+  .dyn-row .rm{
+    appearance:none; border:0; background:transparent;
+    color:var(--muted); cursor:pointer; padding:3px 7px;
+    font-size:14px;
+  }
+  .dyn-row .rm:hover{color:var(--negative)}
+  .dyn-add{
+    align-self:flex-start;
+    background:transparent; border:1px dashed var(--border-strong);
+    color:var(--muted); padding:4px 10px;
+    border-radius:var(--radius-sm); cursor:pointer;
+    font-size:11.5px; transition:all 0.15s;
+    margin-top:6px;
+  }
+  .dyn-add:hover{border-color:var(--accent); color:var(--accent); border-style:solid}
+
+  /* ────────────── TABLE-STYLE COST ROWS ────────────── */
+  .cost-group{margin-bottom:12px}
+  .cost-group-title{
+    font-family:var(--display); font-size:12px;
+    color:var(--accent-2); font-weight:600;
+    margin:0 0 6px 0; letter-spacing:0.04em;
+    padding-bottom:4px; border-bottom:1px solid var(--border);
+    display:flex; align-items:baseline; justify-content:space-between;
+  }
+  .cost-group-title .meta{
+    font-family:var(--mono); font-size:10px;
+    color:var(--soft); font-weight:400;
+  }
+  .cost-row{
+    display:grid;
+    grid-template-columns: 1fr 92px 100px 64px 64px 150px;
+    gap:6px; align-items:center;
+    padding:4px 0;
+    border-bottom:1px dotted var(--border);
+    font-size:12px;
+  }
+  .cost-row:last-child{border-bottom:0}
+  .cost-row.no-params{
+    grid-template-columns: 1fr 150px;
+  }
+  .cost-row .lbl{
+    font-size:12px; padding-right:6px;
+  }
+  .cost-row .lbl input.field-label-edit{font-size:12px; color:var(--ink-2)}
+  .cost-row .lbl input.field-label-edit:focus{color:var(--ink)}
+  .cost-row .param{
+    font-family:var(--mono); font-size:10.5px;
+    color:var(--muted);
+    position:relative;
+  }
+  .cost-row .param input{
+    width:100%; font-family:var(--mono); font-size:11px;
+    padding:3px 16px 3px 5px; border:1px solid var(--border);
+    border-radius:4px; background:var(--surface);
+    text-align:right;
+  }
+  .cost-row .param input:focus{outline:none; border-color:var(--ink)}
+  .cost-row .param .lbl-sm{
+    font-size:9.5px; color:var(--soft); display:block; margin-bottom:1px;
+    letter-spacing:0.04em;
+  }
+  .cost-row .param .unit-sm{
+    position:absolute; right:5px; bottom:5px;
+    font-size:9px; color:var(--soft);
+    pointer-events:none;
+    font-family:var(--body);
+  }
+  .cost-row .val{
+    font-family:var(--mono); font-size:12px;
+    text-align:right; font-feature-settings:"tnum";
+    color:var(--ink);
+  }
+  .cost-row .val.editable input{
+    width:100%; font-family:var(--mono); font-size:12px;
+    padding:4px 7px; text-align:right;
+    border:1px solid var(--border); border-radius:4px;
+    background:var(--surface);
+  }
+  .cost-row .val.editable input:focus{outline:none; border-color:var(--ink)}
+  .cost-row.formula .val{color:var(--accent-2)}
+  .cost-subtotal{
+    display:grid;
+    grid-template-columns: 1fr 150px;
+    gap:6px; padding:6px 0; margin-top:3px;
+    border-top:1px solid var(--border-strong);
+    font-family:var(--display); font-size:12.5px;
+    font-weight:600;
+  }
+  .cost-subtotal .val{
+    font-family:var(--mono); text-align:right;
+    font-feature-settings:"tnum";
+  }
+  @media (max-width:900px){
+    .cost-row{grid-template-columns: 1fr 150px}
+    .cost-row .param{display:none}
+    .cost-row.formula .param.show-mobile{display:block; grid-column:1/-1}
+  }
+
+  /* ────────────── DATE GRID (aligned 4-column) ────────────── */
+  .date-grid{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:10px 16px;
+    margin-top:10px;
+    padding-top:10px;
+    border-top:1px dashed var(--border);
+  }
+  .date-grid .field label{
+    font-size:11px; color:var(--muted);
+    letter-spacing:0.04em; margin-bottom:3px;
+  }
+  .date-grid input[type="date"]{
+    font-family:var(--mono); font-feature-settings:"tnum";
+    text-align:left;
+  }
+  @media (max-width:900px){.date-grid{grid-template-columns:repeat(2, 1fr)}}
+  @media (max-width:600px){.date-grid{grid-template-columns:1fr}}
+
+  /* ────────────── PDF UPLOAD ────────────── */
+  .pdf-upload-wrap{
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .pdf-upload-btn{
+    display:flex; flex-direction:row; align-items:center;
+    justify-content:center; gap:10px;
+    padding:11px 16px;
+    background:var(--surface-2);
+    border:1.5px dashed var(--border);
+    border-radius:var(--radius);
+    cursor:pointer;
+    transition:all 0.15s ease;
+    text-align:left;
+  }
+  .pdf-upload-btn:hover{
+    border-color:var(--accent);
+    background:var(--surface);
+  }
+  .pdf-upload-btn.dragover{
+    border-color:var(--accent);
+    background:rgba(184,84,62,0.06);
+  }
+  .pdf-upload-btn .pdf-ic{
+    font-size:20px; color:var(--accent);
+    font-weight:300; line-height:1;
+  }
+  .pdf-upload-btn .pdf-lbl{
+    font-family:var(--display); font-size:13px;
+    color:var(--ink);
+  }
+  .pdf-upload-btn .pdf-sub{
+    font-size:10.5px; color:var(--muted);
+    margin-left:auto;
+  }
+  .pdf-list{
+    display:flex; flex-direction:column; gap:4px;
+  }
+  .pdf-empty{
+    font-size:11px; color:var(--soft);
+    text-align:center; padding:6px;
+    font-style:italic;
+  }
+  .pdf-item{
+    display:flex; align-items:center; gap:8px;
+    padding:6px 11px;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-radius:5px;
+    transition:all 0.15s ease;
+  }
+  .pdf-item:hover{border-color:var(--accent)}
+  .pdf-item .pdf-icon-sm{
+    width:24px; height:24px;
+    background:var(--accent);
+    color:#f4f1ec;
+    border-radius:3px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:9px; font-weight:600;
+    font-family:var(--mono);
+    flex-shrink:0;
+  }
+  .pdf-item .pdf-icon-img{
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+    background-color:var(--surface-2);
+    border:1px solid var(--border);
+  }
+  .pdf-item .pdf-name{
+    flex:1; font-size:12px; color:var(--ink);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .pdf-item .pdf-size{
+    font-family:var(--mono); font-size:10.5px; color:var(--muted);
+  }
+  .pdf-item .pdf-open, .pdf-item .pdf-remove{
+    width:24px; height:24px;
+    border:1px solid var(--border);
+    background:var(--surface);
+    border-radius:4px;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--ink-2);
+    transition:all 0.15s ease;
+    font-size:11px;
+  }
+  .pdf-item .pdf-open:hover{ border-color:var(--accent); color:var(--accent) }
+  .pdf-item .pdf-remove:hover{ border-color:var(--negative); color:var(--negative) }
+
+
+  .kpi-grid{
+    display:grid; grid-template-columns:repeat(4, 1fr); gap:10px;
+    margin-bottom:10px;
+  }
+  .kpi{
+    background:var(--surface-2); border:1px solid var(--border);
+    border-radius:var(--radius-sm); padding:10px 13px;
+  }
+  .kpi.dark{background:var(--accent-2); color:#f4f1ec; border-color:var(--accent-2)}
+  .kpi .k-label{
+    font-size:10.5px; color:var(--muted);
+    letter-spacing:0.06em; margin-bottom:4px;
+  }
+  .kpi.dark .k-label{color:rgba(244,241,236,0.7)}
+  .kpi .k-value{
+    font-family:var(--display); font-size:18px;
+    font-weight:600; letter-spacing:0.02em;
+    font-feature-settings:"tnum";
+  }
+  .kpi .k-unit{font-size:11px; color:var(--muted); margin-left:3px; font-family:var(--body); font-weight:400}
+  .kpi.dark .k-unit{color:rgba(244,241,236,0.7)}
+  .kpi .k-sub{
+    font-family:var(--mono); font-size:10.5px;
+    color:var(--muted); margin-top:2px;
+  }
+  .kpi.dark .k-sub{color:rgba(244,241,236,0.6)}
+  .kpi.positive .k-value{color:var(--positive)}
+  .kpi.negative .k-value{color:var(--negative)}
+  @media (max-width:900px){.kpi-grid{grid-template-columns:repeat(2, 1fr)}}
+  .kpi-grid.kpi-3{grid-template-columns:repeat(3, 1fr)}
+  @media (max-width:760px){.kpi-grid.kpi-3{grid-template-columns:1fr}}
+
+  /* ────────────── SCENARIO COMPARE ────────────── */
+  .scenario-grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:10px;
+  }
+  .scenario-card{
+    background:var(--surface-2); border:1px solid var(--border);
+    border-radius:var(--radius-sm); padding:11px 14px;
+  }
+  .scenario-card h3{
+    font-family:var(--display); font-size:13px; margin:0 0 8px 0;
+    padding-bottom:6px; border-bottom:1px solid var(--border);
+    display:flex; align-items:baseline; justify-content:space-between;
+  }
+  .scenario-card h3 .badge{
+    font-family:var(--mono); font-size:9.5px; color:var(--accent);
+    background:rgba(184,84,62,0.1); padding:2px 7px; border-radius:99px;
+    letter-spacing:0.08em;
+  }
+  .scenario-card.low h3 .badge{color:var(--muted); background:rgba(0,0,0,0.05)}
+  .scenario-line{
+    display:flex; justify-content:space-between;
+    padding:3px 0; font-size:12px;
+    border-bottom:1px dotted var(--border);
+  }
+  .scenario-line:last-child{border-bottom:0}
+  .scenario-line .lbl{color:var(--muted)}
+  .scenario-line .val{font-family:var(--mono); font-feature-settings:"tnum"}
+  .scenario-line.big{padding:7px 0; font-size:13.5px; font-weight:600; margin-top:4px}
+  .scenario-line.big .val{font-family:var(--display); font-size:16px}
+  .scenario-line.profit .val{color:var(--positive)}
+  .scenario-line.loss .val{color:var(--negative)}
+  @media (max-width:900px){.scenario-grid{grid-template-columns:1fr}}
+
+  /* ────────────── EXIT STRATEGY (Tab 1) ────────────── */
+  .exit-toggle{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-top:6px;
+  }
+  @media (max-width:760px){.exit-toggle{grid-template-columns:1fr}}
+  .exit-opt{
+    cursor:pointer;
+    display:block;
+  }
+  .exit-opt input{
+    position:absolute; opacity:0; pointer-events:none;
+  }
+  .exit-card{
+    border:1.5px solid var(--border);
+    border-radius:var(--radius);
+    background:var(--surface-2);
+    padding:10px 13px;
+    transition:all 0.18s ease;
+    height:100%;
+  }
+  .exit-opt:hover .exit-card{
+    border-color:var(--accent);
+    background:var(--surface);
+  }
+  .exit-opt input:checked + .exit-card{
+    border-color:var(--accent);
+    background:linear-gradient(180deg, rgba(184,84,62,0.07), var(--surface));
+    box-shadow:0 0 0 3px rgba(184,84,62,0.10);
+  }
+  .exit-title{
+    font-family:var(--display);
+    font-size:14px;
+    font-weight:600;
+    color:var(--ink);
+    margin-bottom:4px;
+    letter-spacing:0.02em;
+  }
+  .exit-opt input:checked + .exit-card .exit-title{
+    color:var(--accent);
+  }
+  .exit-desc{
+    font-size:11.5px; line-height:1.55;
+    color:var(--muted);
+  }
+  .exit-desc b{ color:var(--ink); font-weight:600 }
+  .exit-panel{
+    margin-top:10px; padding:11px 14px;
+    background:var(--surface-2);
+    border-radius:var(--radius);
+    border:1px solid var(--border);
+    display:none;
+  }
+  .exit-panel.active{display:block}
+  .strategy-note{
+    margin-top:8px;
+    padding:7px 12px;
+    background:rgba(47,62,58,0.06);
+    border-left:3px solid var(--accent-2);
+    border-radius:4px;
+    font-size:11.5px; line-height:1.6;
+    color:var(--ink-2);
+  }
+  .strategy-note b, .strategy-note span{ font-weight:600 }
+
+  /* ────────────── 東京23区ワンルーム条例 ────────────── */
+  .jourei-box{
+    margin-top:4px;
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    background:var(--surface-2);
+    padding:10px 13px;
+  }
+  .jourei-empty{
+    font-size:12px; color:var(--muted);
+    text-align:center; padding:6px;
+  }
+  .jourei-header{
+    display:flex; justify-content:space-between; align-items:center;
+    flex-wrap:wrap; gap:8px;
+    padding-bottom:7px; margin-bottom:8px;
+    border-bottom:1px solid var(--border);
+  }
+  .jourei-ward{
+    font-family:var(--display);
+    font-size:14px; font-weight:600;
+    color:var(--accent);
+    letter-spacing:0.02em;
+  }
+  .jourei-ward .ward-tag{
+    display:inline-block;
+    font-family:var(--body);
+    font-size:10px; font-weight:500;
+    background:rgba(184,84,62,0.10);
+    color:var(--accent);
+    padding:1px 7px; border-radius:4px;
+    margin-left:6px; vertical-align:middle;
+    letter-spacing:0.06em;
+  }
+  .jourei-link{
+    display:inline-flex; align-items:center; gap:5px;
+    padding:5px 11px;
+    background:var(--ink);
+    color:var(--surface);
+    text-decoration:none;
+    border-radius:var(--radius);
+    font-size:11px; font-weight:500;
+    transition:all 0.15s ease;
+  }
+  .jourei-link:hover{
+    background:var(--accent);
+    transform:translateY(-1px);
+  }
+  .jourei-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));
+    gap:6px 12px;
+    margin-bottom:6px;
+  }
+  .jourei-item{
+    display:flex; flex-direction:column;
+    padding:6px 9px;
+    background:var(--surface);
+    border-radius:5px;
+    border-left:3px solid var(--accent-2);
+  }
+  .jourei-item .j-label{
+    font-size:10px; color:var(--muted);
+    letter-spacing:0.05em;
+    margin-bottom:2px;
+  }
+  .jourei-item .j-value{
+    font-family:var(--mono);
+    font-size:12.5px; font-weight:600;
+    color:var(--ink);
+  }
+  .jourei-warn{
+    margin-top:6px;
+    font-size:10.5px; color:var(--muted);
+    line-height:1.5;
+    padding:6px 10px;
+    background:rgba(218,165,32,0.07);
+    border-left:3px solid #c8930e;
+    border-radius:4px;
+  }
+  .jourei-applies{
+    margin-top:6px; padding:7px 11px;
+    background:rgba(47,62,58,0.06);
+    border-radius:5px;
+    font-size:12px; line-height:1.55;
+  }
+  .jourei-applies.danger{
+    background:rgba(184,84,62,0.10);
+    border-left:3px solid var(--accent);
+  }
+  .jourei-applies.safe{
+    background:rgba(34,139,84,0.08);
+    border-left:3px solid var(--positive);
+  }
+  .jourei-applies b{ font-weight:600 }
+
+  /* ────────────── UNIT TABLE (Tab 3) ────────────── */
+  .unit-table{
+    width:100%; border-collapse:collapse;
+    font-size:12px;
+  }
+  .unit-table th{
+    text-align:left; padding:6px 8px;
+    background:var(--surface-2);
+    border-bottom:1px solid var(--border-strong);
+    font-weight:500; font-size:11px;
+    color:var(--muted); letter-spacing:0.04em;
+  }
+  .unit-table th.num{text-align:right}
+  .unit-table td{
+    padding:3px 8px;
+    border-bottom:1px dotted var(--border);
+  }
+  .unit-table td input{
+    width:100%; border:1px solid transparent;
+    background:transparent; padding:3px 5px;
+    font-family:var(--body); font-size:12px;
+    border-radius:4px;
+  }
+  .unit-table td input:hover{border-color:var(--border)}
+  .unit-table td input:focus{outline:none; border-color:var(--ink); background:var(--surface)}
+  .unit-table td.num input{font-family:var(--mono); text-align:right}
+  .unit-table tfoot td{
+    font-weight:600; background:var(--surface-2);
+    border-top:1px solid var(--border-strong);
+    border-bottom:0; padding:7px 8px;
+  }
+  .unit-table tfoot td.num{font-family:var(--mono)}
+
+  /* ────────────── SENSITIVITY ────────────── */
+  .sens-table{
+    width:100%; border-collapse:collapse; font-size:11.5px;
+    font-family:var(--mono); font-feature-settings:"tnum";
+  }
+  .sens-table th, .sens-table td{
+    padding:5px 7px; border:1px solid var(--border);
+    text-align:right;
+  }
+  .sens-table th{
+    background:var(--surface-2); color:var(--muted);
+    font-weight:500; font-size:10.5px;
+  }
+  .sens-table th.corner{background:var(--accent-2); color:#fff}
+  .sens-table td.good{background:rgba(47,111,79,0.08); color:var(--positive); font-weight:500}
+  .sens-table td.bad{background:rgba(167,58,42,0.08); color:var(--negative)}
+
+  /* ────────────── HELPERS ────────────── */
+  .col-span-2{grid-column:span 2}
+  .col-span-full{grid-column:1/-1}
+  .divider{
+    height:1px; background:var(--border);
+    margin:12px 0;
+  }
+  .pill{
+    display:inline-block; padding:2px 9px; font-size:10.5px;
+    background:rgba(184,84,62,0.1); color:var(--accent);
+    border-radius:99px; font-weight:500;
+    letter-spacing:0.06em; margin-left:6px;
+  }
+  .pill.muted{background:rgba(0,0,0,0.05); color:var(--muted)}
+  .pill.positive{background:rgba(47,111,79,0.1); color:var(--positive)}
+
+  .flow-note{
+    background:linear-gradient(to right, rgba(184,84,62,0.06), rgba(184,84,62,0.0));
+    border-left:3px solid var(--accent);
+    padding:10px 14px; margin-bottom:18px;
+    font-size:12.5px; color:var(--ink-2);
+    border-radius:0 var(--radius-sm) var(--radius-sm) 0;
+  }
+  .flow-note .label{
+    font-family:var(--mono); font-size:10px;
+    color:var(--accent); letter-spacing:0.12em;
+    display:block; margin-bottom:2px;
+  }
+
+  /* ────────────── MODAL ────────────── */
+  .modal{
+    position:fixed; inset:0; z-index:100;
+    background:rgba(26,26,26,0.4);
+    backdrop-filter:blur(4px);
+    display:none; align-items:center; justify-content:center;
+    padding:20px;
+  }
+  .modal.active{display:flex}
+  .modal-box{
+    background:var(--surface); border-radius:var(--radius);
+    box-shadow:var(--shadow-lg); width:100%; max-width:560px;
+    padding:24px; max-height:90vh; overflow-y:auto;
+  }
+  .modal-box h3{
+    font-family:var(--display); margin:0 0 12px 0;
+    font-size:18px;
+  }
+  .modal-actions{
+    display:flex; gap:8px; justify-content:flex-end;
+    margin-top:16px;
+  }
+  .modal pre{
+    background:var(--surface-2); border:1px solid var(--border);
+    border-radius:var(--radius-sm); padding:14px;
+    font-family:var(--mono); font-size:11.5px;
+    white-space:pre-wrap; word-break:break-all;
+    max-height:50vh; overflow-y:auto;
+    margin:0 0 14px 0;
+  }
+  .save-list{display:flex; flex-direction:column; gap:6px; margin-bottom:14px}
+  .save-item{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:8px 12px; background:var(--surface-2);
+    border:1px solid var(--border); border-radius:var(--radius-sm);
+    font-size:13px;
+  }
+  .save-item .meta{font-size:11px; color:var(--muted); font-family:var(--mono); margin-left:8px}
+  .save-item .item-actions{display:flex; gap:4px}
+  .save-item button{
+    appearance:none; border:1px solid var(--border-strong);
+    background:transparent; color:var(--ink-2);
+    padding:3px 10px; border-radius:4px; font-size:11px; cursor:pointer;
+  }
+  .save-item button:hover{background:var(--ink); color:var(--surface); border-color:var(--ink)}
+  .save-item button.del:hover{background:var(--negative); border-color:var(--negative); color:#fff}
+
+  /* ────────────── TOAST ────────────── */
+  .toast{
+    position:fixed; bottom:24px; left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:var(--surface);
+    padding:10px 18px; border-radius:99px;
+    font-size:13px; box-shadow:var(--shadow-lg);
+    z-index:200; opacity:0; pointer-events:none;
+    transition:opacity 0.2s, transform 0.2s;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+
+  /* ────────────── PRINT ────────────── */
+  @media print{
+    body{background:#fff; font-size:11px}
+    .topbar, .tabs, .dyn-add, .actions, .modal, .section-actions{display:none !important}
+    main{padding:0; max-width:none}
+    .panel{display:block !important; page-break-after:always}
+    .panel:last-child{page-break-after:auto}
+    .section{box-shadow:none; border:1px solid #999; margin-bottom:14px; break-inside:avoid}
+    .map-wrap{display:none}
+    .kpi-grid, .scenario-grid{break-inside:avoid}
+    .cost-row .param{display:block}
+    .field-label-edit, .cost-row .lbl input, .input{
+      border:0 !important; background:transparent !important; box-shadow:none !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- ─────────────── TOPBAR ─────────────── -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <span class="brand-mark">投資<span class="accent">シミュレーター</span></span>
+      <span class="brand-sub">Real Estate Investment Planner</span>
+    </div>
+    <div class="actions">
+      <button class="btn" id="btn-sample" title="サンプルデータを読み込み">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h12l4 4v12H4z"/><path d="M14 4v6h6"/></svg>
+        サンプル
+      </button>
+      <button class="btn" id="btn-save">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 21h14a2 2 0 0 0 2-2V8l-5-5H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+        保存
+      </button>
+      <button class="btn" id="btn-load">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v13h18V7M3 7l3-4h12l3 4M12 12v6m-3-3l3 3 3-3"/></svg>
+        読込
+      </button>
+      <button class="btn" id="btn-memo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        メモ
+      </button>
+      <button class="btn primary" id="btn-export" title="この案件を単一HTMLとして書き出してSlack共有">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+        共有HTML
+      </button>
+      <button class="btn" id="btn-print">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        印刷
+      </button>
+      <button class="btn warn" id="btn-reset">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+        リセット
+      </button>
+    </div>
+  </div>
+  <nav class="tabs">
+    <button class="tab active" data-tab="1"><span class="step">STEP 01</span>仕入れ検討</button>
+    <button class="tab" data-tab="2"><span class="step">STEP 02</span>事業計画</button>
+    <button class="tab" data-tab="3"><span class="step">STEP 03</span>企画開発</button>
+  </nav>
+</header>
+
+<main>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- ════════════════ TAB 1: 仕入れ検討 ════════════════ -->
+<!-- ════════════════════════════════════════════════ -->
+<section class="panel active" data-panel="1">
+
+  <div class="flow-note">
+    <span class="label">STEP 01</span>
+    物件情報と立地条件、想定プランを入力してください。ここでの数値は STEP 02 事業計画に自動反映されます。
+  </div>
+
+  <!-- ─────────── 物件概要 + 立地・交通（統合） ─────────── -->
+  <div class="section">
+    <div class="section-head">
+      <h2>物件概要・立地</h2>
+      <span class="ribbon">PROPERTY &amp; LOCATION</span>
+    </div>
+    <div class="section-body">
+      <div class="two-col-section">
+        <!-- 左：物件概要 -->
+        <div class="sub-block">
+          <div class="sub-block-title">物件概要</div>
+          <div class="grid cols-2">
+            <div class="field col-span-2">
+              <label>案件名</label>
+              <input class="input" data-k="project.name" placeholder="例：北区東十条3丁目 計画" />
+            </div>
+            <div class="field">
+              <label>住居表示</label>
+              <input class="input" data-k="project.address" placeholder="例：東京都北区東十条3-1-2" />
+            </div>
+            <div class="field">
+              <label>地番</label>
+              <input class="input" data-k="project.lot" placeholder="例：1番19" />
+            </div>
+            <div class="field col-span-2">
+              <label>Google Maps URL</label>
+              <input class="input" data-k="project.mapUrl" placeholder="https://maps.app.goo.gl/..." />
+              <a class="map-link" id="map-link" target="_blank" rel="noopener">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                マップを開く
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右：立地・交通 + マップ -->
+        <div class="sub-block">
+          <div class="sub-block-title">立地・交通</div>
+          <div class="dyn-list" id="stations-list"></div>
+          <button class="dyn-add" id="add-station">+ 駅を追加</button>
+          <div class="field" style="margin-top:10px">
+            <label>ミニマップ</label>
+            <div class="map-wrap" id="map-wrap">
+              <div class="map-empty">住居表示を入力するとマップが表示されます</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────── 土地条件 ─────────── -->
+  <div class="section">
+    <div class="section-head">
+      <h2>土地条件・法規制</h2>
+      <span class="ribbon">LAND &amp; REGULATIONS</span>
+    </div>
+    <div class="section-body">
+      <div class="grid cols-3">
+        <div class="field">
+          <label>土地面積（公簿/実測）</label>
+          <div class="input-with-unit">
+            <input class="input num" data-k="project.landArea" data-type="num" placeholder="0.00" />
+            <span class="unit">㎡</span>
+          </div>
+          <div class="hint derived" id="hint-tsubo">— 坪</div>
+        </div>
+        <div class="field">
+          <label>権利</label>
+          <input class="input" data-k="project.rights" value="所有権" readonly style="background:var(--surface-2); color:var(--muted)" />
+        </div>
+        <div class="field">
+          <label>測量状況</label>
+          <input class="input" data-k="project.surveyStatus" placeholder="例：確定測量確認中" />
+        </div>
+
+        <div class="field">
+          <label>仕入価格</label>
+          <div class="input-with-unit">
+            <input class="input num" data-k="project.priceTotal" data-type="num" placeholder="0" />
+            <span class="unit">円</span>
+          </div>
+          <div class="hint derived" id="hint-price">— 万円 / — 円/坪</div>
+        </div>
+
+        <div class="field">
+          <label>用途地域</label>
+          <select class="input" data-k="project.zoning">
+            <option value="">選択してください</option>
+            <option value="第一種低層住居専用地域">第一種低層住居専用地域</option>
+            <option value="第二種低層住居専用地域">第二種低層住居専用地域</option>
+            <option value="第一種中高層住居専用地域">第一種中高層住居専用地域</option>
+            <option value="第二種中高層住居専用地域">第二種中高層住居専用地域</option>
+            <option value="第一種住居地域">第一種住居地域</option>
+            <option value="第二種住居地域">第二種住居地域</option>
+            <option value="準住居地域">準住居地域</option>
+            <option value="田園住居地域">田園住居地域</option>
+            <option value="近隣商業地域">近隣商業地域</option>
+            <option value="商業地域">商業地域</option>
+            <option value="準工業地域">準工業地域</option>
+            <option value="工業地域">工業地域</option>
+            <option value="工業専用地域">工業専用地域</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>建蔽率 / 容積率</label>
+          <div style="display:flex; gap:6px; align-items:center">
+            <div class="input-with-unit" style="flex:1">
+              <input class="input num" data-k="project.coverage" data-type="num" />
+              <span class="unit">%</span>
+            </div>
+            <span style="color:var(--muted)">/</span>
+            <div class="input-with-unit" style="flex:1">
+              <input class="input num" data-k="project.far" data-type="num" />
+              <span class="unit">%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>前面道路</label>
+          <input class="input" data-k="project.road" placeholder="例：南西側幅員約5.99m" />
+        </div>
+        <div class="field">
+          <label>防火指定</label>
+          <select class="input" data-k="project.fire">
+            <option value="">選択してください</option>
+            <option value="防火地域">防火地域</option>
+            <option value="準防火地域">準防火地域</option>
+            <option value="法22条区域">法22条区域</option>
+            <option value="指定なし">指定なし</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>その他法規制</label>
+          <input class="input" data-k="project.otherReg" placeholder="例：埋蔵文化財／高度地区／日影等" />
+        </div>
+
+        <div class="field">
+          <label>解体費用</label>
+          <select class="input" data-k="project.demolitionFlag">
+            <option value="none">なし</option>
+            <option value="manual">あり（金額入力）</option>
+          </select>
+        </div>
+        <div class="field" id="demolition-amt-wrap" style="display:none">
+          <label>解体費用 金額</label>
+          <div class="input-with-unit">
+            <input class="input num" data-k="project.demolitionCost" data-type="num" placeholder="0" />
+            <span class="unit">円</span>
+          </div>
+          <div class="hint derived" id="hint-demolition">— 万円</div>
+        </div>
+
+        <div class="field">
+          <label>仲介手数料（仕入時）</label>
+          <select class="input" data-k="project.brokerBuyFlag">
+            <option value="none">なし</option>
+            <option value="auto3">あり（3%＋6万＋税で自動算出）</option>
+          </select>
+        </div>
+        <div class="field" id="broker-buy-amt-wrap" style="display:none">
+          <label>仲介手数料 自動算出額</label>
+          <div class="input-with-unit">
+            <input class="input num readonly" id="broker-buy-amt" readonly />
+            <span class="unit">円</span>
+          </div>
+          <div class="hint derived" id="hint-broker-buy">— 万円</div>
+        </div>
+
+        <div class="field col-span-2 col-span-full">
+          <label>受渡条件・特記事項</label>
+          <textarea class="textarea" data-k="project.notes" placeholder="例：現況空渡し、立ち退き予定、確定測量確認中など"></textarea>
+        </div>
+
+        <div class="field col-span-2 col-span-full">
+          <label>東京23区 ワンルーム条例（自動判定）</label>
+          <div class="jourei-box" id="jourei-box">
+            <div class="jourei-empty">所在地に「○○区」を入力すると、該当区の条例目安を表示します。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────── 想定プラン・建築費逆算 ─────────── -->
+  <div class="section">
+    <div class="section-head">
+      <h2>想定プラン・建築費逆算</h2>
+      <span class="desc">部屋構成と建築費を手入力し、出口戦略を切替えて採算を試算</span>
+      <span class="ribbon">PLAN &amp; YIELD</span>
+    </div>
+    <div class="section-body">
+
+      <div class="grid cols-3">
+        <div class="field">
+          <label>階層プラン</label>
+          <input class="input" data-k="plan.floorPlan" placeholder="例：地下1階地上5階" />
+        </div>
+        <div class="field">
+          <label>構造</label>
+          <input class="input" data-k="plan.structure" value="壁式RC造" readonly style="background:var(--surface-2); color:var(--muted)" />
+        </div>
+        <div class="field">
+          <label>延床面積</label>
+          <div class="input-with-unit">
+            <input class="input num" data-k="plan.totalFloorArea" data-type="num" />
+            <span class="unit">㎡</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="grid cols-4">
+        <div class="field">
+          <label>専有面積合計</label>
+          <div class="input-with-unit">
+            <input class="input num" data-k="plan.unitArea" data-type="num" placeholder="0" />
+            <span class="unit">㎡</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>戸数</label>
+          <div class="input-with-unit">
+            <input class="input num" data-k="plan.unitCount" data-type="num" placeholder="0" />
+            <span class="unit">戸</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>平米単価（賃料）</label>
+          <div class="input-with-unit">
+            <input class="input num" data-k="plan.rentPerSqm" data-type="num" placeholder="0" />
+            <span class="unit">円/㎡</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>建築費</label>
+          <div class="input-with-unit">
+            <input class="input num" data-k="plan.buildCostManual" data-type="num" placeholder="0" />
+            <span class="unit">円</span>
+          </div>
+          <div class="hint derived" id="hint-build-cost">— 万円</div>
+        </div>
+      </div>
+
+      <div class="grid cols-2" style="margin-top:10px">
+        <div class="field">
+          <label>満室想定年収（自動：専有面積 × 単価 × 12）</label>
+          <div class="input-with-unit">
+            <input class="input num readonly" id="plan-annual-income" readonly />
+            <span class="unit">円</span>
+          </div>
+          <div class="hint derived" id="hint-annual-income">— 万円</div>
+        </div>
+        <div class="field">
+          <label>建築利回り（年収÷（土地＋建築））</label>
+          <div class="input-with-unit">
+            <input class="input num readonly" id="plan-build-yield-actual" readonly />
+            <span class="unit">%</span>
+          </div>
+          <div class="hint">＝ 弊社採算ベースの表面利回り</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- ─────── 出口戦略 ─────── -->
+      <div class="field" style="margin-bottom:14px">
+        <label style="font-size:13px; font-weight:600; color:var(--accent-2); letter-spacing:0.04em">出口戦略 / EXIT STRATEGY</label>
+        <div class="exit-toggle" id="exit-toggle">
+          <label class="exit-opt" data-exit="A">
+            <input type="radio" name="exitMode" value="A" />
+            <div class="exit-card">
+              <div class="exit-title">A. 企画付土地再販</div>
+              <div class="exit-desc">土地仕入＋企画プラン → 投資家へ再販。買主が <b>4.5–5.0%</b> 利回りで購入する想定の総事業費から土地転売価格を逆算。</div>
+            </div>
+          </label>
+          <label class="exit-opt" data-exit="B">
+            <input type="radio" name="exitMode" value="B" />
+            <div class="exit-card">
+              <div class="exit-title">B. 新築開発販売</div>
+              <div class="exit-desc">弊社で建築 → 投資家へ販売。<b>5.5%で建てて3.7%で売る</b>。原価の約1.5倍売却を狙う（都心RC・成熟期モデル）。</div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- ─────── Strategy A panel ─────── -->
+      <div class="exit-panel" id="panel-exit-A">
+        <div class="grid cols-4" style="margin-bottom:10px">
+          <div class="field">
+            <label>買主想定利回り</label>
+            <div class="input-with-unit">
+              <input class="input num" data-k="plan.buyerYield" data-type="num" />
+              <span class="unit">%</span>
+            </div>
+            <div class="hint">買主が許容する表面利回り</div>
+          </div>
+          <div class="field">
+            <label>総事業費</label>
+            <div class="input-with-unit">
+              <input class="input num readonly" id="planA-buyer-total" readonly />
+              <span class="unit">円</span>
+            </div>
+            <div class="hint derived" id="planA-buyer-total-sub">年収 ÷ 買主利回り</div>
+          </div>
+          <div class="field">
+            <label>逆算 土地再販価格</label>
+            <div class="input-with-unit">
+              <input class="input num readonly" id="planA-land-resale" readonly />
+              <span class="unit">円</span>
+            </div>
+            <div class="hint derived" id="planA-land-resale-sub">＝ 総事業費 − 建築費</div>
+          </div>
+          <div class="field">
+            <label>土地転売益（粗利）</label>
+            <div class="input-with-unit">
+              <input class="input num readonly" id="planA-land-profit" readonly />
+              <span class="unit">円</span>
+            </div>
+            <div class="hint derived" id="planA-land-profit-sub">＝ 再販価格 − 仕入額</div>
+          </div>
+        </div>
+        <div class="strategy-note">
+          ▸ 「企画付土地販売」モデル：弊社は土地を仕入れ、収益試算（買主視点で <span id="planA-target-y">5.0</span>% 利回り）の企画プランを付けて再販。リスクは仕入から再販までの保有コストに限定。
+        </div>
+      </div>
+
+      <!-- ─────── Strategy B panel ─────── -->
+      <div class="exit-panel" id="panel-exit-B">
+        <div class="grid cols-4" style="margin-bottom:10px">
+          <div class="field">
+            <label>建築利回り（採算）</label>
+            <div class="input-with-unit">
+              <input class="input num" data-k="plan.buildYield" data-type="num" />
+              <span class="unit">%</span>
+            </div>
+            <div class="hint">＝ 5.5% で建てる</div>
+          </div>
+          <div class="field">
+            <label>売却利回り（投資家）</label>
+            <div class="input-with-unit">
+              <input class="input num" data-k="plan.saleYield" data-type="num" />
+              <span class="unit">%</span>
+            </div>
+            <div class="hint">＝ 3.7% で売る（城南ワンルーム期待利回り）</div>
+          </div>
+          <div class="field">
+            <label>逆算 総事業費</label>
+            <div class="input-with-unit">
+              <input class="input num readonly" id="planB-target-total" readonly />
+              <span class="unit">円</span>
+            </div>
+            <div class="hint derived" id="planB-target-total-sub">年収 ÷ 建築利回り</div>
+          </div>
+          <div class="field">
+            <label>逆算 建築費（上限）</label>
+            <div class="input-with-unit">
+              <input class="input num readonly" id="planB-build-target" readonly />
+              <span class="unit">円</span>
+            </div>
+            <div class="hint derived" id="planB-build-target-sub">＝ 総事業費 − 土地</div>
+          </div>
+        </div>
+        <div class="grid cols-3">
+          <div class="field">
+            <label>想定売却価格（投資家へ）</label>
+            <div class="input-with-unit">
+              <input class="input num readonly" id="planB-sale-price" readonly />
+              <span class="unit">円</span>
+            </div>
+            <div class="hint derived" id="planB-sale-price-sub">年収 ÷ 売却利回り</div>
+          </div>
+          <div class="field">
+            <label>原価倍率（売価／原価）</label>
+            <div class="input-with-unit">
+              <input class="input num readonly" id="planB-multiple" readonly />
+              <span class="unit">倍</span>
+            </div>
+            <div class="hint">目安：1.5倍</div>
+          </div>
+          <div class="field">
+            <label>開発粗利（売価 − 原価）</label>
+            <div class="input-with-unit">
+              <input class="input num readonly" id="planB-gross-profit" readonly />
+              <span class="unit">円</span>
+            </div>
+            <div class="hint derived" id="planB-gross-profit-sub">— 万円</div>
+          </div>
+        </div>
+        <div class="strategy-note">
+          ▸ 「新築開発販売」モデル：弊社で土地仕入から企画・建築・販売まで一貫。建築利回り <span id="planB-by-disp">5.5</span>% で建て、<span id="planB-sy-disp">3.7</span>% で売却。
+        </div>
+      </div>
+
+      <div class="kpi-grid kpi-3" style="margin-top:18px">
+        <div class="kpi">
+          <div class="k-label">仕入価格（土地）</div>
+          <div class="k-value" id="kpi-land-buy">—<span class="k-unit"> 円</span></div>
+          <div class="k-sub" id="kpi-land-buy-sub">— 万円 / 坪—</div>
+        </div>
+        <div class="kpi">
+          <div class="k-label" id="kpi-resale-label">逆算 土地再販価格</div>
+          <div class="k-value" id="kpi-yield-resale">—<span class="k-unit"> 円</span></div>
+          <div class="k-sub" id="kpi-resale-sub">— 万円 / 坪—</div>
+        </div>
+        <div class="kpi dark">
+          <div class="k-label">想定粗利</div>
+          <div class="k-value" id="kpi-rough-profit">—<span class="k-unit"> 円</span></div>
+          <div class="k-sub" id="kpi-rough-profit-sub">— 万円</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ─────────── 周辺賃料データ ─────────── -->
+  <div class="section">
+    <div class="section-head">
+      <h2>周辺賃料・成約事例</h2>
+      <span class="ribbon">MARKET COMPS</span>
+    </div>
+    <div class="section-body">
+      <div class="dyn-list" id="comps-list"></div>
+      <button class="dyn-add" id="add-comp">+ 賃料事例を追加</button>
+
+      <div class="divider"></div>
+
+      <div class="field" style="margin-bottom:8px">
+        <label>参考資料 PDF・画像（成約事例・物件資料・現況写真・公図・間取り図など）</label>
+      </div>
+      <div class="pdf-upload-wrap">
+        <label class="pdf-upload-btn" for="comp-pdf-input">
+          <span class="pdf-ic">＋</span>
+          <span class="pdf-lbl">PDF / 画像をアップロード</span>
+          <span class="pdf-sub">PDF・JPG・PNG / 複数選択可 / 1ファイル10MBまで</span>
+        </label>
+        <input type="file" id="comp-pdf-input" accept="application/pdf, image/jpeg, image/png" multiple style="display:none" />
+        <div class="pdf-list" id="comp-pdf-list">
+          <div class="pdf-empty">アップロードされた資料はここに一覧表示されます</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- ════════════════ TAB 2: 事業計画 ════════════════ -->
+<!-- ════════════════════════════════════════════════ -->
+<section class="panel" data-panel="2">
+
+  <div class="flow-note">
+    <span class="label">STEP 02</span>
+    STEP 01 の数値を反映済みです。各諸費用の項目名・パラメータは自由に編集できます（業務委託手数料など案件ごとに調整可能）。
+  </div>
+
+  <!-- ─────────── 計画ヘッダ ─────────── -->
+  <div class="section">
+    <div class="section-head">
+      <h2>計画ヘッダ</h2>
+      <span class="ribbon">PROJECT HEADER</span>
+    </div>
+    <div class="section-body">
+      <div class="grid cols-3">
+        <div class="field col-span-2">
+          <label>計画名称</label>
+          <input class="input" data-k="biz.title" />
+        </div>
+        <div class="field">
+          <label>物件担当（仕入／販売）</label>
+          <div style="display:flex; gap:6px">
+            <input class="input" data-k="biz.staffBuy" placeholder="仕入担当" />
+            <input class="input" data-k="biz.staffSell" placeholder="販売担当" />
+          </div>
+        </div>
+        <div class="field col-span-2">
+          <label>住居表示</label>
+          <input class="input" data-k="biz.address" />
+        </div>
+        <div class="field">
+          <label>仲介会社（仕入／販売）</label>
+          <div style="display:flex; gap:6px">
+            <input class="input" data-k="biz.brokerBuy" placeholder="仕入仲介" />
+            <input class="input" data-k="biz.brokerSell" placeholder="販売仲介" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>地積</label>
+          <div class="input-with-unit">
+            <input class="input num" data-k="biz.landAreaM2" data-type="num" />
+            <span class="unit">㎡</span>
+          </div>
+          <div class="hint derived" id="biz-hint-tsubo">— 坪</div>
+        </div>
+        <div class="field">
+          <label>構造</label>
+          <input class="input" data-k="biz.structure" value="壁式RC造" readonly style="background:var(--surface-2); color:var(--muted)" />
+        </div>
+        <div class="field">
+          <label>種別</label>
+          <input class="input" data-k="biz.usage" />
+        </div>
+        <div class="field">
+          <label>階高</label>
+          <input class="input" data-k="biz.floors" />
+        </div>
+        <div class="field">
+          <label>戸数</label>
+          <input class="input" data-k="biz.units" />
+        </div>
+        <div class="field">
+          <label>用途地域</label>
+          <select class="input" data-k="biz.zoning">
+            <option value="">選択してください</option>
+            <option value="第一種低層住居専用地域">第一種低層住居専用地域</option>
+            <option value="第二種低層住居専用地域">第二種低層住居専用地域</option>
+            <option value="第一種中高層住居専用地域">第一種中高層住居専用地域</option>
+            <option value="第二種中高層住居専用地域">第二種中高層住居専用地域</option>
+            <option value="第一種住居地域">第一種住居地域</option>
+            <option value="第二種住居地域">第二種住居地域</option>
+            <option value="準住居地域">準住居地域</option>
+            <option value="田園住居地域">田園住居地域</option>
+            <option value="近隣商業地域">近隣商業地域</option>
+            <option value="商業地域">商業地域</option>
+            <option value="準工業地域">準工業地域</option>
+            <option value="工業地域">工業地域</option>
+            <option value="工業専用地域">工業専用地域</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>建蔽率 / 容積率（％）</label>
+          <div style="display:flex; gap:6px">
+            <div class="input-with-unit" style="flex:1">
+              <input class="input num" data-k="biz.coverage" data-type="num" />
+              <span class="unit">%</span>
+            </div>
+            <span style="color:var(--muted); align-self:center">/</span>
+            <div class="input-with-unit" style="flex:1">
+              <input class="input num" data-k="biz.far" data-type="num" />
+              <span class="unit">%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="date-grid">
+        <div class="field">
+          <label>契約日（仕入）</label>
+          <input class="input" type="date" data-k="biz.dateContractBuy" />
+        </div>
+        <div class="field">
+          <label>決済日（仕入）</label>
+          <input class="input" type="date" data-k="biz.dateSettleBuy" />
+        </div>
+        <div class="field">
+          <label>契約日（売却）</label>
+          <input class="input" type="date" data-k="biz.dateContractSell" />
+        </div>
+        <div class="field">
+          <label>決済日（売却）</label>
+          <input class="input" type="date" data-k="biz.dateSettleSell" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────── 評価額 ─────────── -->
+  <div class="section">
+    <div class="section-head">
+      <h2>評価額・固都税</h2>
+      <span class="ribbon">TAX ASSESSMENT</span>
+    </div>
+    <div class="section-body">
+      <div class="grid cols-3">
+        <div class="field">
+          <label>土地評価価格（固定資産税評価額）</label>
+          <div class="input-with-unit">
+            <input class="input num" data-k="biz.landTaxEval" data-type="num" />
+            <span class="unit">円</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>仕入時 建物評価価格</label>
+          <div class="input-with-unit">
+            <input class="input num" data-k="biz.bldgTaxEvalBuy" data-type="num" />
+            <span class="unit">円</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>新築時 延床面積</label>
+          <div class="input-with-unit">
+            <input class="input num" data-k="biz.bldgFloorArea" data-type="num" />
+            <span class="unit">㎡</span>
+          </div>
+          <div class="hint">建物評価＝延床 × 166,000円/㎡</div>
+        </div>
+        <div class="field">
+          <label>新築時 建物評価価格（自動）</label>
+          <div class="input-with-unit">
+            <input class="input num readonly" id="biz-bldg-eval-new" readonly />
+            <span class="unit">円</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>仕入時 固都税（年額・小規模宅地）</label>
+          <div class="input-with-unit">
+            <input class="input num readonly" id="biz-tax-buy" readonly />
+            <span class="unit">円</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>新築時 固都税（年額・小規模宅地）</label>
+          <div class="input-with-unit">
+            <input class="input num readonly" id="biz-tax-new" readonly />
+            <span class="unit">円</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────── 収支概要 ─────────── -->
+  <div class="section">
+    <div class="section-head">
+      <h2>収支概要</h2>
+      <span class="ribbon">OVERVIEW</span>
+    </div>
+    <div class="section-body">
+      <div class="grid cols-3">
+        <div class="field">
+          <label>満室想定年間収入</label>
+          <div class="input-with-unit">
+            <input class="input num" data-k="biz.annualIncome" data-type="num" />
+            <span class="unit">円</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>土地 買付価格</label>
+          <div class="input-with-unit">
+            <input class="input num" data-k="biz.landBuyPrice" data-type="num" />
+            <span class="unit">円</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>建物 建築費</label>
+          <div class="input-with-unit">
+            <input class="input num" data-k="biz.buildCost" data-type="num" />
+            <span class="unit">円</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>土地 借入金額</label>
+          <div class="input-with-unit">
+            <input class="input num" data-k="biz.landLoan" data-type="num" />
+            <span class="unit">円</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>建物 借入金額</label>
+          <div class="input-with-unit">
+            <input class="input num" data-k="biz.buildLoan" data-type="num" />
+            <span class="unit">円</span>
+          </div>
+        </div>
+        <div class="field"></div>
+        <div class="field">
+          <label>販売予定価格（上）</label>
+          <div class="input-with-unit">
+            <input class="input num" data-k="biz.salePriceHigh" data-type="num" />
+            <span class="unit">円</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>販売予定価格（下）</label>
+          <div class="input-with-unit">
+            <input class="input num" data-k="biz.salePriceLow" data-type="num" />
+            <span class="unit">円</span>
+          </div>
+        </div>
+        <div class="field"></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="kpi-grid kpi-3">
+        <div class="kpi">
+          <div class="k-label">表面利回り（建販総額）</div>
+          <div class="k-value" id="biz-yield-build">—<span class="k-unit">%</span></div>
+        </div>
+        <div class="kpi">
+          <div class="k-label">表面利回り（販上）</div>
+          <div class="k-value" id="biz-yield-high">—<span class="k-unit">%</span></div>
+        </div>
+        <div class="kpi dark">
+          <div class="k-label">表面利回り（販下）</div>
+          <div class="k-value" id="biz-yield-low">—<span class="k-unit">%</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────── 土地仕入諸費用 ─────────── -->
+  <div class="section">
+    <div class="section-head">
+      <h2>土地仕入 諸費用</h2>
+      <span class="ribbon">LAND ACQUISITION COSTS</span>
+    </div>
+    <div class="section-body" id="costs-land"></div>
+  </div>
+
+  <!-- ─────────── 建築諸費用 ─────────── -->
+  <div class="section">
+    <div class="section-head">
+      <h2>建築 諸費用</h2>
+      <span class="ribbon">CONSTRUCTION COSTS</span>
+    </div>
+    <div class="section-body" id="costs-build"></div>
+  </div>
+
+  <!-- ─────────── 売却諸費用 ─────────── -->
+  <div class="section">
+    <div class="section-head">
+      <h2>売却 諸費用</h2>
+      <span class="desc">販売価格（上）に基づく試算</span>
+      <span class="ribbon">SALE COSTS</span>
+    </div>
+    <div class="section-body" id="costs-sell"></div>
+  </div>
+
+  <!-- ─────────── 損益サマリー ─────────── -->
+  <div class="section">
+    <div class="section-head">
+      <h2>事業損益サマリー</h2>
+      <span class="ribbon">P&amp;L SUMMARY</span>
+    </div>
+    <div class="section-body">
+      <div class="scenario-grid" id="scenario-grid"></div>
+    </div>
+  </div>
+
+</section>
+
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- ════════════════ TAB 3: 企画開発 ════════════════ -->
+<!-- ════════════════════════════════════════════════ -->
+<section class="panel" data-panel="3">
+
+  <div class="flow-note">
+    <span class="label">STEP 03</span>
+    部屋ごとの賃料設定、利回り感度、想定NOIを試算し、最終的な事業判断につなげます。
+  </div>
+
+  <!-- ─────────── 部屋別賃料計画 ─────────── -->
+  <div class="section">
+    <div class="section-head">
+      <h2>部屋別 賃料計画</h2>
+      <span class="desc">戸数と専有面積から自動展開／個別に編集可</span>
+      <span class="ribbon">UNIT-LEVEL RENT PLAN</span>
+    </div>
+    <div class="section-body">
+      <table class="unit-table" id="unit-table">
+        <thead>
+          <tr>
+            <th>室番</th>
+            <th>階</th>
+            <th>タイプ</th>
+            <th class="num">面積（㎡）</th>
+            <th class="num">賃料（月）</th>
+            <th class="num">㎡単価</th>
+            <th class="num">年収</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="unit-tbody"></tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3">合計</td>
+            <td class="num" id="unit-sum-area">—</td>
+            <td class="num" id="unit-sum-rent">—</td>
+            <td class="num">—</td>
+            <td class="num" id="unit-sum-annual">—</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+      <button class="dyn-add" id="add-unit-row" style="margin-top:10px">+ 部屋を追加</button>
+    </div>
+  </div>
+
+  <!-- ─────────── 想定運営費 (NOI) ─────────── -->
+  <div class="section">
+    <div class="section-head">
+      <h2>運営費・NOI</h2>
+      <span class="desc">保有運用を想定した実質利回り</span>
+      <span class="ribbon">OPERATING EXPENSES</span>
+    </div>
+    <div class="section-body">
+      <div class="grid cols-3">
+        <div class="field">
+          <label>想定空室率</label>
+          <div class="input-with-unit">
+            <input class="input num" data-k="dev.vacancy" data-type="num" />
+            <span class="unit">%</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>修繕積立／その他（年）</label>
+          <div class="input-with-unit">
+            <input class="input num" data-k="dev.repair" data-type="num" />
+            <span class="unit">円</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>固都税（新築時・年）</label>
+          <div class="input-with-unit">
+            <input class="input num readonly" id="dev-tax" readonly />
+            <span class="unit">円</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="k-label">想定実収入（空室控除後）</div>
+          <div class="k-value" id="dev-eff-income">—<span class="k-unit">円</span></div>
+          <div class="k-sub" id="dev-eff-income-sub">— 万円</div>
+        </div>
+        <div class="kpi">
+          <div class="k-label">想定運営費合計</div>
+          <div class="k-value" id="dev-opex">—<span class="k-unit">円</span></div>
+          <div class="k-sub" id="dev-opex-sub">— 万円</div>
+        </div>
+        <div class="kpi">
+          <div class="k-label">NOI（営業純収益）</div>
+          <div class="k-value" id="dev-noi">—<span class="k-unit">円</span></div>
+          <div class="k-sub" id="dev-noi-sub">— 万円</div>
+        </div>
+        <div class="kpi dark">
+          <div class="k-label">NOI利回り（販上ベース）</div>
+          <div class="k-value" id="dev-noi-yield">—<span class="k-unit">%</span></div>
+          <div class="k-sub">NOI ÷ 販売価格（上）</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────── 感度分析 ─────────── -->
+  <div class="section">
+    <div class="section-head">
+      <h2>感度分析（賃料 × 利回り）</h2>
+      <span class="desc">表面利回りから逆算した想定販売価格</span>
+      <span class="ribbon">SENSITIVITY</span>
+    </div>
+    <div class="section-body">
+      <div style="overflow-x:auto">
+        <table class="sens-table" id="sens-table"></table>
+      </div>
+      <p class="hint" style="margin-top:8px">※ 緑：粗利が事業費の8%以上を確保／赤：粗利マイナス</p>
+    </div>
+  </div>
+
+</section>
+
+</main>
+
+<!-- ─────────── MODAL: MEMO ─────────── -->
+<div class="modal" id="modal-memo">
+  <div class="modal-box">
+    <h3>メモ（Slack貼付用）</h3>
+    <pre id="memo-text"></pre>
+    <div class="modal-actions">
+      <button class="btn" id="memo-close">閉じる</button>
+      <button class="btn primary" id="memo-copy">クリップボードにコピー</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────── MODAL: SAVE ─────────── -->
+<div class="modal" id="modal-save">
+  <div class="modal-box">
+    <h3>計画を保存</h3>
+    <div class="field" style="margin-bottom:14px">
+      <label>保存名</label>
+      <input class="input" id="save-name" placeholder="案件名を入力" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="save-cancel">キャンセル</button>
+      <button class="btn primary" id="save-confirm">保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────── MODAL: LOAD ─────────── -->
+<div class="modal" id="modal-load">
+  <div class="modal-box">
+    <h3>保存済み計画</h3>
+    <div class="save-list" id="save-list"></div>
+    <div class="modal-actions">
+      <button class="btn" id="load-close">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────── MODAL: SAMPLE PICKER ─────────── -->
+<div class="modal" id="modal-sample">
+  <div class="modal-box">
+    <h3>サンプルデータを選択</h3>
+    <p style="font-size:13px; color:var(--muted); margin:0 0 16px">現在の入力を上書きしてサンプルを読み込みます。</p>
+    <div class="save-list" id="sample-list">
+      <div class="save-item" data-sample="komagome">
+        <div class="save-info">
+          <div class="save-name">豊島区駒込1-25-3</div>
+          <div class="save-meta">17,000万円 / 85.65㎡ / 駒込3分 / 10戸プラン</div>
+        </div>
+        <button class="btn primary save-load-btn" data-sample-pick="komagome">読み込み</button>
+      </div>
+      <div class="save-item" data-sample="higashijujo">
+        <div class="save-info">
+          <div class="save-name">北区東十条3-1-2</div>
+          <div class="save-meta">92.56㎡ / 東十条4分 / 商業地域</div>
+        </div>
+        <button class="btn primary save-load-btn" data-sample-pick="higashijujo">読み込み</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="sample-cancel">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────── MODAL: RESET ─────────── -->
+<div class="modal" id="modal-reset">
+  <div class="modal-box">
+    <h3>リセット確認</h3>
+    <p style="font-size:13px; color:var(--muted)">現在入力中の内容がすべて消去されます。よろしいですか？<br>※ 保存済みの計画は削除されません。</p>
+    <div class="modal-actions">
+      <button class="btn" id="reset-cancel">キャンセル</button>
+      <button class="btn warn" id="reset-confirm">リセット実行</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────── PDF VIEWER ─────────── -->
+<div class="pdf-viewer" id="pdf-viewer">
+  <div class="pdf-viewer-box">
+    <div class="pdf-viewer-head">
+      <div class="pdf-viewer-title" id="pdf-viewer-title">PDF</div>
+      <a class="pdf-viewer-download" id="pdf-viewer-download" download>ダウンロード</a>
+      <button class="pdf-viewer-close" id="pdf-viewer-close" type="button" title="閉じる">×</button>
+    </div>
+    <div class="pdf-viewer-body" id="pdf-viewer-body"></div>
+  </div>
+</div>
+
+<!-- ─────────── TOAST ─────────── -->
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+/* ════════════════════════════════════════════════
+ *  STATE MODEL
+ * ════════════════════════════════════════════════ */
+function defaultState(){
+  return {
+    project: {
+      name:'', address:'', lot:'', mapUrl:'',
+      stations:[{line:'', station:'', minutes:''}],
+      landArea:0, rights:'所有権', surveyStatus:'',
+      priceTotal:0, zoning:'', coverage:80, far:500,
+      road:'', fire:'', otherReg:'',
+      demolitionFlag:'none', demolitionCost:0,
+      brokerBuyFlag:'none',
+      notes:''
+    },
+    plan: {
+      floorPlan:'', structure:'壁式RC造', totalFloorArea:0,
+      // ── manual inputs (no longer derived from unitMix) ──
+      unitArea:0,         // 専有面積合計 ㎡（手入力）
+      unitCount:0,        // 戸数（手入力）
+      rentPerSqm:0,       // 平米単価 円/㎡（手入力）
+      buildCostManual:0,  // 建築費 円（手入力）
+      // ── exit strategy ──
+      exitMode:'A',       // 'A' = 企画付土地再販, 'B' = 新築開発販売
+      // Strategy A params
+      buyerYield:5.0,     // 投資家想定利回り % (4.5–5.0)
+      // Strategy B params
+      buildYield:5.5,     // 建築時利回り %（弊社採算）
+      saleYield:3.7       // 売却時利回り %（投資家へ）
+    },
+    comps:[],
+    compPdfs:[],  // [{name, size, dataUrl}] — base64 data URLs for PDF previews
+    biz: {
+      title:'', staffBuy:'', staffSell:'',
+      address:'', brokerBuy:'', brokerSell:'',
+      landAreaM2:0, structure:'壁式RC造', usage:'共同住宅',
+      floors:'', units:'', zoning:'', coverage:80, far:500,
+      dateContractBuy:'', dateSettleBuy:'',
+      dateContractSell:'', dateSettleSell:'',
+      landTaxEval:0, bldgTaxEvalBuy:0, bldgFloorArea:0,
+      annualIncome:0, landBuyPrice:0, buildCost:0,
+      landLoan:0, buildLoan:0,
+      salePriceHigh:0, salePriceLow:0,
+      // Cost rows (editable labels + params)
+      costs: defaultCosts()
+    },
+    dev: {
+      vacancy:5, repair:200000,
+      units:[]
+    }
+  };
+}
+
+function defaultCosts(){
+  // Each row: {id, label, group, formula, value, params}
+  return {
+    // Land acquisition – 契約関連
+    L_buy:        {id:'L_buy', group:'land_contract', label:'買付額', formula:'=F24', editable:false},
+    L_broker:     {id:'L_broker', group:'land_contract', label:'仲介手数料', formula:'rate+tax+fixed', rate:0.03, tax:0.10, fixed:60000, editable:false},
+    L_stamp:      {id:'L_stamp', group:'land_contract', label:'印紙', value:0, editable:true},
+    L_wire:       {id:'L_wire', group:'land_contract', label:'振込手数料', value:880, editable:true},
+    L_outsource:  {id:'L_outsource', group:'land_contract', label:'業務委託手数料', value:0, editable:true},
+    // Land – 登記
+    L_regLand:    {id:'L_regLand', group:'land_register', label:'土地登録免許税', formula:'landEval*0.015', editable:false},
+    L_regBldg:    {id:'L_regBldg', group:'land_register', label:'建物登録免許税', formula:'bldgEvalBuy*0.02', editable:false},
+    L_mortgage:   {id:'L_mortgage', group:'land_register', label:'抵当権設定免許税', formula:'landLoan*0.004', editable:false},
+    L_judFee:     {id:'L_judFee', group:'land_register', label:'司法書士報酬', value:150000, editable:true},
+    // Land – 融資関連
+    L_loanStamp:  {id:'L_loanStamp', group:'land_loan', label:'金消印紙', value:100000, editable:true},
+    L_loanFee:    {id:'L_loanFee', group:'land_loan', label:'融資手数料', formula:'landLoan*rate', rate:0.01, editable:false},
+    L_interest:   {id:'L_interest', group:'land_loan', label:'借入利息', formula:'landLoan*rate*months/12', rate:0.03, months:15, editable:false},
+    L_other2:     {id:'L_other2', group:'land_loan', label:'その他②', value:0, editable:true},
+    // Land – 諸経費
+    L_taxSettle:  {id:'L_taxSettle', group:'land_misc', label:'固都税清算金', formula:'taxBuy*months/12', editable:false},
+    L_acqTax:     {id:'L_acqTax', group:'land_misc', label:'不動産取得税', formula:'(landEval*0.5+bldgEvalBuy)*0.03', editable:false},
+    L_insurance:  {id:'L_insurance', group:'land_misc', label:'保険', value:0, editable:true},
+    L_demolish:   {id:'L_demolish', group:'land_misc', label:'建物解体費', value:0, editable:true},
+    L_reserve:    {id:'L_reserve', group:'land_misc', label:'予備費', value:0, editable:true},
+
+    // Construction
+    B_build:      {id:'B_build', group:'build_main', label:'建築費', formula:'=F25', editable:false},
+    // Construction – 登記
+    B_regNew:     {id:'B_regNew', group:'build_register', label:'所有権保存登録免許税', formula:'bldgEvalNew*0.004', editable:false},
+    B_regReport:  {id:'B_regReport', group:'build_register', label:'建物表示登記報酬', value:100000, editable:true},
+    B_mortgage:   {id:'B_mortgage', group:'build_register', label:'建物抵当権設定', formula:'buildLoan*0.004', editable:false},
+    B_judFee:     {id:'B_judFee', group:'build_register', label:'司法書士報酬', value:150000, editable:true},
+    // Construction – 融資
+    B_loanStamp:  {id:'B_loanStamp', group:'build_loan', label:'金消印紙', value:100000, editable:true},
+    B_loanFee:    {id:'B_loanFee', group:'build_loan', label:'融資手数料', formula:'buildCost*rate', rate:0.01, editable:false},
+    B_int1:       {id:'B_int1', group:'build_loan', label:'借入利息 分割実行①', formula:'buildLoan*share*rate*months/12', share:0.30, rate:0.03, months:18, editable:false},
+    B_int2:       {id:'B_int2', group:'build_loan', label:'借入利息 分割実行②', formula:'buildLoan*share*rate*months/12', share:0.30, rate:0.03, months:12, editable:false},
+    B_int3:       {id:'B_int3', group:'build_loan', label:'借入利息 分割実行③', formula:'buildLoan*share*rate*months/12', share:0.40, rate:0.03, months:9, editable:false},
+    B_other3:     {id:'B_other3', group:'build_loan', label:'その他③', value:0, editable:true},
+    // Construction – 諸経費
+    B_acqTax:     {id:'B_acqTax', group:'build_misc', label:'不動産取得税', formula:'bldgEvalNew*0.03', editable:false},
+    B_reserve:    {id:'B_reserve', group:'build_misc', label:'予備費', value:0, editable:true},
+
+    // Sale
+    S_broker:     {id:'S_broker', group:'sell_contract', label:'仲介手数料', formula:'rate+tax+fixed', rate:0.03, tax:0.10, fixed:60000, editable:false},
+    S_stamp:      {id:'S_stamp', group:'sell_contract', label:'印紙代', value:0, editable:true},
+    S_other4:     {id:'S_other4', group:'sell_contract', label:'その他④', value:0, editable:true},
+    S_release:    {id:'S_release', group:'sell_misc', label:'抹消費用', value:15000, editable:true},
+    S_cancel:     {id:'S_cancel', group:'sell_misc', label:'解約手数料', value:0, editable:true},
+    S_other5:     {id:'S_other5', group:'sell_misc', label:'その他⑤', value:0, editable:true}
+  };
+}
+
+const COST_GROUPS = {
+  land_contract:   {section:'land',  title:'契約関連', order:1},
+  land_register:   {section:'land',  title:'登記', order:2, subtotal:true},
+  land_loan:       {section:'land',  title:'融資関連', order:3},
+  land_misc:       {section:'land',  title:'諸経費', order:4},
+  build_main:      {section:'build', title:'建築費', order:1},
+  build_register:  {section:'build', title:'登記', order:2, subtotal:true},
+  build_loan:      {section:'build', title:'融資関連', order:3},
+  build_misc:      {section:'build', title:'諸経費', order:4},
+  sell_contract:   {section:'sell',  title:'契約関連', order:1},
+  sell_misc:       {section:'sell',  title:'諸経費', order:2}
+};
+
+const COST_GROUP_ORDER = {
+  land:  ['land_contract','land_register','land_loan','land_misc'],
+  build: ['build_main','build_register','build_loan','build_misc'],
+  sell:  ['sell_contract','sell_misc']
+};
+
+let state = defaultState();
+
+/* ════════════════════════════════════════════════
+ *  UTILITIES
+ * ════════════════════════════════════════════════ */
+const fmt = n => {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  const r = Math.round(n);
+  return r.toLocaleString('ja-JP');
+};
+const fmtMan = n => {
+  if (!n) return '—';
+  return (n/10000).toLocaleString('ja-JP', {maximumFractionDigits:1}) + ' 万円';
+};
+const fmt2 = n => {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  return n.toLocaleString('ja-JP', {maximumFractionDigits:2});
+};
+const fmtPct = (n, dp=2) => {
+  if (!n && n !== 0) return '—';
+  if (!isFinite(n)) return '—';
+  return (n*100).toFixed(dp) + '%';
+};
+const m2ToTsubo = m2 => m2 * 0.3025;
+const roundDown = (n, exp=0) => {
+  const m = Math.pow(10, exp);
+  return Math.floor(n / m) * m;
+};
+const num = v => {
+  if (typeof v === 'number') return v;
+  if (!v) return 0;
+  const n = parseFloat(String(v).replace(/,/g,''));
+  return isNaN(n) ? 0 : n;
+};
+// Get/set nested property by 'a.b.c' path
+const getPath = (obj, path) => path.split('.').reduce((o,k) => o?.[k], obj);
+const setPath = (obj, path, val) => {
+  const keys = path.split('.');
+  const last = keys.pop();
+  const target = keys.reduce((o,k) => o[k] = o[k] || {}, obj);
+  target[last] = val;
+};
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._tid);
+  t._tid = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ════════════════════════════════════════════════
+ *  CALCULATIONS (mirror of Excel formulas)
+ * ════════════════════════════════════════════════ */
+function computeBiz(){
+  const b = state.biz;
+  const c = b.costs;
+  // 評価額 G19 = 166000 * 延床
+  const bldgEvalNew = 166000 * num(b.bldgFloorArea);
+  // 固都税: ROUNDDOWN(((G17/6+G18)*0.014)+((G17/3+G18)*0.003), -2)
+  const taxBuy = roundDown(((num(b.landTaxEval)/6 + num(b.bldgTaxEvalBuy)) * 0.014) +
+                            ((num(b.landTaxEval)/3 + num(b.bldgTaxEvalBuy)) * 0.003), 2);
+  const taxNew = roundDown(((num(b.landTaxEval)/6 + bldgEvalNew) * 0.014) +
+                            ((num(b.landTaxEval)/3 + bldgEvalNew) * 0.003), 2);
+  // Land loan defaults to land buy price; build loan to build cost
+  const landLoan  = num(b.landLoan)  || num(b.landBuyPrice);
+  const buildLoan = num(b.buildLoan) || num(b.buildCost);
+
+  const ctx = {
+    landBuyPrice: num(b.landBuyPrice),
+    buildCost:    num(b.buildCost),
+    landLoan, buildLoan,
+    landEval:     num(b.landTaxEval),
+    bldgEvalBuy:  num(b.bldgTaxEvalBuy),
+    bldgEvalNew,
+    taxBuy, taxNew,
+    salePriceHigh: num(b.salePriceHigh),
+    salePriceLow:  num(b.salePriceLow)
+  };
+
+  // Helper to compute a cost row value (returns {high, low})
+  const rowVal = (row, salePrice) => {
+    if (row.formula === '=F24') return ctx.landBuyPrice;
+    if (row.formula === '=F25') return ctx.buildCost;
+    if (row.formula === 'rate+tax+fixed') {
+      // 仲介: ROUNDDOWN(base*rate + fixed + (base*rate+fixed)*tax, 0)
+      let base;
+      if (row.group === 'sell_contract') base = salePrice;
+      else if (row.group === 'land_contract') base = ctx.landBuyPrice;
+      else base = 0;
+      const sub = base * num(row.rate) + num(row.fixed);
+      return Math.floor(sub + sub * num(row.tax));
+    }
+    if (row.formula === 'landEval*0.015') return ctx.landEval * 0.015;
+    if (row.formula === 'bldgEvalBuy*0.02') return ctx.bldgEvalBuy * 0.02;
+    if (row.formula === 'landLoan*0.004') return ctx.landLoan * 0.004;
+    if (row.formula === 'landLoan*rate') return ctx.landLoan * num(row.rate);
+    if (row.formula === 'landLoan*rate*months/12') return ctx.landLoan * num(row.rate) * num(row.months) / 12;
+    if (row.formula === 'taxBuy*months/12') {
+      // Uses same months as L_interest
+      const refMonths = state.biz.costs.L_interest.months;
+      return ctx.taxBuy * num(refMonths) / 12;
+    }
+    if (row.formula === '(landEval*0.5+bldgEvalBuy)*0.03') return roundDown((ctx.landEval * 0.5 + ctx.bldgEvalBuy) * 0.03, 2);
+    if (row.formula === 'bldgEvalNew*0.004') return ctx.bldgEvalNew * 0.004;
+    if (row.formula === 'buildLoan*0.004') return ctx.buildLoan * 0.004;
+    if (row.formula === 'buildCost*rate') return ctx.buildCost * num(row.rate);
+    if (row.formula === 'buildLoan*share*rate*months/12') return ctx.buildLoan * num(row.share) * num(row.rate) * num(row.months) / 12;
+    if (row.formula === 'bldgEvalNew*0.03') return roundDown(ctx.bldgEvalNew * 0.03, 2);
+    // Plain value
+    return num(row.value);
+  };
+
+  // Compute every cost row for both scenarios
+  const computed = {};
+  const computedLow = {};
+  for (const id in c) {
+    computed[id]    = rowVal(c[id], ctx.salePriceHigh);
+    computedLow[id] = rowVal(c[id], ctx.salePriceLow);
+  }
+
+  // Group totals
+  const groupTotals = {};
+  const groupTotalsLow = {};
+  for (const id in c) {
+    const g = c[id].group;
+    groupTotals[g]    = (groupTotals[g]    || 0) + computed[id];
+    groupTotalsLow[g] = (groupTotalsLow[g] || 0) + computedLow[id];
+  }
+
+  // Section totals
+  const sectionTotals    = {land:0, build:0, sell:0};
+  const sectionTotalsLow = {land:0, build:0, sell:0};
+  for (const g in COST_GROUPS) {
+    const s = COST_GROUPS[g].section;
+    sectionTotals[s]    += groupTotals[g] || 0;
+    sectionTotalsLow[s] += groupTotalsLow[g] || 0;
+  }
+
+  const totalCost    = sectionTotals.land    + sectionTotals.build    + sectionTotals.sell;
+  const totalCostLow = sectionTotalsLow.land + sectionTotalsLow.build + sectionTotalsLow.sell;
+
+  const profitHigh = ctx.salePriceHigh - totalCost;
+  const profitLow  = ctx.salePriceLow  - totalCostLow;
+  const marginHigh = totalCost    ? profitHigh / totalCost    : 0;
+  const marginLow  = totalCost    ? profitLow  / totalCost    : 0;
+
+  // Yields
+  const buildAndLand = ctx.landBuyPrice + ctx.buildCost;
+  const yieldBuild = buildAndLand ? num(b.annualIncome) / buildAndLand : 0;
+  const yieldHigh  = ctx.salePriceHigh ? num(b.annualIncome) / ctx.salePriceHigh : 0;
+  const yieldLow   = ctx.salePriceLow  ? num(b.annualIncome) / ctx.salePriceLow  : 0;
+
+  return {
+    ctx, computed, computedLow,
+    groupTotals, groupTotalsLow,
+    sectionTotals, sectionTotalsLow,
+    totalCost, totalCostLow,
+    profitHigh, profitLow, marginHigh, marginLow,
+    yieldBuild, yieldHigh, yieldLow,
+    bldgEvalNew, taxBuy, taxNew, landLoan, buildLoan
+  };
+}
+
+/* ════════════════════════════════════════════════
+ *  TAB 1 RENDERING
+ * ════════════════════════════════════════════════ */
+function renderTab1(){
+  // Stations
+  renderStations();
+  // Unit mix
+  renderUnitMix();
+  // Comps
+  renderComps();
+  // Comp PDFs
+  renderCompPdfs();
+  // Sync inputs from state
+  syncInputsFromState();
+  // Map
+  updateMap();
+  // Plan computation
+  updatePlanComputed();
+  // Ward ordinance
+  renderJoureiBox();
+}
+
+function renderStations(){
+  const list = document.getElementById('stations-list');
+  list.innerHTML = '';
+  state.project.stations.forEach((s, i) => {
+    const row = document.createElement('div');
+    row.className = 'dyn-row';
+    row.style.gridTemplateColumns = '2fr 2fr 1fr auto';
+    row.innerHTML = `
+      <input class="input" placeholder="路線名" value="${escAttr(s.line)}" data-station-key="line" data-idx="${i}" />
+      <input class="input" placeholder="駅名" value="${escAttr(s.station)}" data-station-key="station" data-idx="${i}" />
+      <div class="input-with-unit">
+        <input class="input num" placeholder="徒歩分" value="${escAttr(s.minutes)}" data-station-key="minutes" data-idx="${i}" />
+        <span class="unit">分</span>
+      </div>
+      <button class="rm" data-rm-station="${i}" title="削除">×</button>
+    `;
+    list.appendChild(row);
+  });
+  list.querySelectorAll('input[data-station-key]').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const i = +e.target.dataset.idx;
+      const k = e.target.dataset.stationKey;
+      state.project.stations[i][k] = e.target.value;
+    });
+  });
+  list.querySelectorAll('[data-rm-station]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const i = +e.target.dataset.rmStation;
+      state.project.stations.splice(i, 1);
+      if (!state.project.stations.length) state.project.stations.push({line:'', station:'', minutes:''});
+      renderStations();
+    });
+  });
+}
+
+function renderUnitMix(){ /* removed — replaced by manual inputs in plan section */ }
+
+function renderComps(){
+  const list = document.getElementById('comps-list');
+  list.innerHTML = '';
+  if (!state.comps.length) state.comps.push({name:'', rent:0, area:0});
+  state.comps.forEach((c, i) => {
+    const row = document.createElement('div');
+    row.className = 'dyn-row';
+    row.style.gridTemplateColumns = '2.4fr 1.1fr 1.1fr 1.2fr auto';
+    const per = num(c.area) > 0 ? Math.round(num(c.rent)/num(c.area)) : 0;
+    row.innerHTML = `
+      <input class="input" placeholder="物件名" value="${escAttr(c.name)}" data-cp-key="name" data-idx="${i}" />
+      <div class="input-with-unit">
+        <input class="input num" placeholder="家賃" value="${c.rent ? Number(c.rent).toLocaleString('ja-JP') : ''}" data-cp-key="rent" data-idx="${i}" />
+        <span class="unit">円</span>
+      </div>
+      <div class="input-with-unit">
+        <input class="input num" placeholder="平米数" value="${c.area || ''}" data-cp-key="area" data-idx="${i}" />
+        <span class="unit">㎡</span>
+      </div>
+      <div class="hint" style="font-family:var(--mono); align-self:center; padding-left:8px; color:var(--accent-2); font-weight:500" data-cp-per="${i}">
+        ${per ? per.toLocaleString() + ' 円/㎡' : '— 円/㎡'}
+      </div>
+      <button class="rm" data-rm-cp="${i}">×</button>
+    `;
+    list.appendChild(row);
+  });
+  // FIX: Don't re-render entire list on input — just update state and the derived 平米単価 cell
+  list.querySelectorAll('input[data-cp-key]').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const i = +e.target.dataset.idx;
+      const k = e.target.dataset.cpKey;
+      const v = (k === 'rent' || k === 'area') ? num(e.target.value) : e.target.value;
+      state.comps[i][k] = v;
+      // Update only the derived 平米単価 cell for this row (no DOM rebuild → no focus loss)
+      const c = state.comps[i];
+      const per = num(c.area) > 0 ? Math.round(num(c.rent)/num(c.area)) : 0;
+      const perEl = list.querySelector(`[data-cp-per="${i}"]`);
+      if (perEl) perEl.textContent = per ? per.toLocaleString() + ' 円/㎡' : '— 円/㎡';
+    });
+    // Comma formatting on blur for rent/area numeric inputs
+    const k = inp.dataset.cpKey;
+    if (k === 'rent' || k === 'area') {
+      inp.addEventListener('focus', e => {
+        const i = +e.target.dataset.idx;
+        const v = state.comps[i][k];
+        if (v) e.target.value = String(v);
+      });
+      inp.addEventListener('blur', e => {
+        const i = +e.target.dataset.idx;
+        const v = state.comps[i][k];
+        if (v) e.target.value = Number(v).toLocaleString('ja-JP', {maximumFractionDigits:6});
+      });
+    }
+  });
+  list.querySelectorAll('[data-rm-cp]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const i = +e.target.dataset.rmCp;
+      state.comps.splice(i, 1);
+      renderComps();
+    });
+  });
+}
+
+/* ════════════════════════════════════════════════
+ *  東京23区 ワンルーム条例 データベース
+ *  ※ 各区の条例は変更されるため、参考値として表示。
+ *    最終確認は外部ツール(kotaroawaji.github.io/23jourei/) または各区HPで実施。
+ * ════════════════════════════════════════════════ */
+const JOUREI_DB = {
+  '千代田区': { minArea:25, minUnits:12, familyRatio:'15戸以上で1/3以上', note:'集合住宅建築指導要綱', danger:true },
+  '中央区': { minArea:25, minUnits:15, familyRatio:'15戸以上で1/3以上', note:'住宅整備指導要綱', danger:true },
+  '港区': { minArea:25, minUnits:15, familyRatio:'15戸以上でファミリー型併設', note:'集合住宅の建築に関する条例', danger:true },
+  '新宿区': { minArea:25, minUnits:15, familyRatio:'30戸以上でファミリー型1/3', note:'ワンルームマンション等指導要綱', danger:true },
+  '文京区': { minArea:25, minUnits:10, familyRatio:'15戸以上でファミリー併設', note:'集合住宅の建築及び管理に関する条例', danger:true },
+  '台東区': { minArea:25, minUnits:13, familyRatio:'15戸以上の場合', note:'共同住宅の建設に関する指導要綱', danger:true },
+  '墨田区': { minArea:25, minUnits:15, familyRatio:'15戸以上で考慮', note:'共同住宅指導要綱' },
+  '江東区': { minArea:25, minUnits:12, familyRatio:'区域別に異なる', note:'集合住宅条例', danger:true },
+  '品川区': { minArea:20, minUnits:15, familyRatio:'15戸以上', note:'集合住宅の建築及び管理に関する条例' },
+  '目黒区': { minArea:25, minUnits:15, familyRatio:'15戸以上でファミリー1/3', note:'ワンルームマンション等建築指導要綱', danger:true },
+  '大田区': { minArea:20, minUnits:15, familyRatio:'15戸以上', note:'集合住宅の建設に係る建築計画の事前公開' },
+  '世田谷区': { minArea:25, minUnits:15, familyRatio:'15戸以上でファミリー1/3', note:'建築物の建築に係る住環境の整備に関する条例', danger:true },
+  '渋谷区': { minArea:28, minUnits:15, familyRatio:'15戸以上', note:'ワンルーム形式集合住宅指導要綱', danger:true },
+  '中野区': { minArea:25, minUnits:15, familyRatio:'15戸以上でファミリー型併設', note:'ワンルームマンション等建築指導要綱', danger:true },
+  '杉並区': { minArea:22, minUnits:8, familyRatio:'15戸以上で考慮', note:'集合住宅条例（小規模から適用）', danger:true },
+  '豊島区': { minArea:25, minUnits:9, familyRatio:'9戸以上で適用・税課税あり', note:'ワンルームマンション税あり（戸数税）', danger:true },
+  '北区': { minArea:20, minUnits:15, familyRatio:'15戸以上', note:'集合住宅の建設に関する条例' },
+  '荒川区': { minArea:25, minUnits:15, familyRatio:'15戸以上', note:'集合住宅条例' },
+  '板橋区': { minArea:25, minUnits:15, familyRatio:'15戸以上・小学校増設費負担金あり', note:'集合住宅の建築及び管理に関する条例', danger:true },
+  '練馬区': { minArea:25, minUnits:15, familyRatio:'15戸以上でファミリー併設', note:'ワンルーム形式集合住宅指導要綱' },
+  '足立区': { minArea:25, minUnits:15, familyRatio:'15戸以上', note:'集合住宅条例' },
+  '葛飾区': { minArea:25, minUnits:15, familyRatio:'15戸以上', note:'集合住宅条例' },
+  '江戸川区': { minArea:25, minUnits:15, familyRatio:'15戸以上', note:'集合住宅条例' }
+};
+
+function detectWard(address){
+  if (!address) return null;
+  // 「○○区」を抽出（東京23区のみ）
+  const wards = Object.keys(JOUREI_DB);
+  for (const w of wards) {
+    if (address.includes(w)) return w;
+  }
+  return null;
+}
+
+function renderJoureiBox(){
+  const box = document.getElementById('jourei-box');
+  if (!box) return;
+  const ward = detectWard(state.project.address);
+  if (!ward) {
+    box.innerHTML = '<div class="jourei-empty">所在地に「○○区」を入力すると、該当区の条例目安を表示します。</div>';
+    return;
+  }
+  const j = JOUREI_DB[ward];
+  const unitArea = num(state.plan.unitArea);
+  const unitCount = num(state.plan.unitCount);
+  const avgArea = unitCount > 0 ? unitArea / unitCount : 0;
+
+  // Check if our plan triggers the ordinance
+  let appliesHtml = '';
+  if (unitCount > 0 && avgArea > 0) {
+    const meetsArea = avgArea >= j.minArea;
+    const meetsCount = unitCount >= j.minUnits;
+    if (meetsCount && meetsArea) {
+      appliesHtml = `<div class="jourei-applies safe">
+        ✓ 現プラン（${unitCount}戸 × 平均${avgArea.toFixed(2)}㎡）は${ward}の最低面積${j.minArea}㎡を<b>クリア</b>。
+        ${j.familyRatio ? `ただし戸数${j.minUnits}戸以上のため、<b>${j.familyRatio}</b>に該当する可能性あり。` : ''}
+      </div>`;
+    } else if (meetsCount && !meetsArea) {
+      appliesHtml = `<div class="jourei-applies danger">
+        ⚠ 現プランの平均専有 <b>${avgArea.toFixed(2)}㎡</b> が${ward}の最低面積 <b>${j.minArea}㎡</b> を下回ります。条例違反となる可能性が高い。
+      </div>`;
+    } else if (!meetsCount && meetsArea) {
+      appliesHtml = `<div class="jourei-applies safe">
+        ✓ 戸数 ${unitCount} 戸は${ward}の適用戸数 ${j.minUnits} 戸未満。条例の主要規制は<b>非適用</b>の見込み（要確認）。
+      </div>`;
+    } else {
+      appliesHtml = `<div class="jourei-applies safe">
+        ✓ ${ward}の主要適用ライン（${j.minUnits}戸以上）に達しないため、条例の主要規制は<b>非適用</b>の見込み（要確認）。
+      </div>`;
+    }
+  }
+
+  box.innerHTML = `
+    <div class="jourei-header">
+      <div class="jourei-ward">
+        ${ward}
+        ${j.danger ? '<span class="ward-tag">規制厳格</span>' : '<span class="ward-tag" style="background:rgba(34,139,84,0.10); color:var(--positive)">標準的</span>'}
+      </div>
+      <a class="jourei-link" href="https://kotaroawaji.github.io/23jourei/" target="_blank" rel="noopener">
+        詳細を外部ツールで確認 →
+      </a>
+    </div>
+    <div class="jourei-grid">
+      <div class="jourei-item">
+        <span class="j-label">最低専有面積</span>
+        <span class="j-value">${j.minArea} ㎡ 以上</span>
+      </div>
+      <div class="jourei-item">
+        <span class="j-label">適用戸数（目安）</span>
+        <span class="j-value">${j.minUnits} 戸以上</span>
+      </div>
+      <div class="jourei-item">
+        <span class="j-label">ファミリー型併設</span>
+        <span class="j-value" style="font-size:12px">${j.familyRatio || '—'}</span>
+      </div>
+      <div class="jourei-item">
+        <span class="j-label">条例・要綱名</span>
+        <span class="j-value" style="font-size:11.5px; line-height:1.4">${j.note}</span>
+      </div>
+    </div>
+    ${appliesHtml}
+    <div class="jourei-warn">
+      ※ 表示値は2024–2025年時点の公開情報に基づく目安です。最低面積・戸数・併設義務・地区別運用は頻繁に改正されます。<b>必ず外部ツール（kotaroawaji.github.io/23jourei/）または${ward}建築課にて最新条文をご確認ください。</b>
+    </div>
+  `;
+}
+
+/* ════════════════════════════════════════════════
+ *  ATTACHMENT UPLOAD HANDLERS (PDF + images)
+ *  Stored in state.compPdfs (kept for backward-compat)
+ *  with an added `mime` field.
+ * ════════════════════════════════════════════════ */
+const ACCEPTED_MIMES = [
+  'application/pdf',
+  'image/jpeg',
+  'image/png'
+];
+function isImageMime(m){ return typeof m === 'string' && m.startsWith('image/'); }
+
+function handlePdfFiles(fileList){
+  const files = Array.from(fileList || []);
+  if (!files.length) return;
+  const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+
+  const errors = [];
+  files.forEach(file => {
+    if (!ACCEPTED_MIMES.includes(file.type)) {
+      errors.push(`${file.name}: PDF・JPG・PNG のみ対応`);
+      return;
+    }
+    if (file.size > MAX_SIZE) {
+      errors.push(`${file.name}: 10MBを超えています（${(file.size/1024/1024).toFixed(1)}MB）`);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = e => {
+      if (!state.compPdfs) state.compPdfs = [];
+      state.compPdfs.push({
+        name: file.name,
+        size: file.size,
+        mime: file.type,
+        dataUrl: e.target.result,
+        uploadedAt: new Date().toISOString()
+      });
+      persistCurrent();
+      renderCompPdfs();
+      showToast(`「${file.name}」をアップロードしました`);
+    };
+    reader.onerror = () => {
+      showToast(`「${file.name}」の読み込みに失敗しました`);
+    };
+    reader.readAsDataURL(file);
+  });
+  if (errors.length) {
+    setTimeout(() => alert(errors.join('\n')), 100);
+  }
+  // Reset input so same file can be re-selected
+  const inp = document.getElementById('comp-pdf-input');
+  if (inp) inp.value = '';
+}
+
+function renderCompPdfs(){
+  const list = document.getElementById('comp-pdf-list');
+  if (!list) return;
+  const items = state.compPdfs || [];
+  if (!items.length) {
+    list.innerHTML = '<div class="pdf-empty">アップロードされた資料はここに一覧表示されます</div>';
+    return;
+  }
+  list.innerHTML = '';
+  items.forEach((it, i) => {
+    // Determine mime: prefer `it.mime`, fall back to dataUrl prefix sniff (for legacy entries)
+    const mime = it.mime || (it.dataUrl && it.dataUrl.startsWith('data:image/') ? it.dataUrl.slice(5, it.dataUrl.indexOf(';')) : 'application/pdf');
+    const isImg = isImageMime(mime);
+    const item = document.createElement('div');
+    item.className = 'pdf-item';
+    const sizeStr = it.size < 1024*1024
+      ? `${(it.size/1024).toFixed(0)} KB`
+      : `${(it.size/1024/1024).toFixed(1)} MB`;
+    const iconHtml = isImg
+      ? `<div class="pdf-icon-sm pdf-icon-img" style="background-image:url('${it.dataUrl}')"></div>`
+      : `<div class="pdf-icon-sm">PDF</div>`;
+    item.innerHTML = `
+      ${iconHtml}
+      <div class="pdf-name" title="${escAttr(it.name)}">${escAttr(it.name)}</div>
+      <div class="pdf-size">${sizeStr}</div>
+      <button class="pdf-open" data-pdf-open="${i}" title="開く">👁</button>
+      <button class="pdf-remove" data-pdf-rm="${i}" title="削除">×</button>
+    `;
+    list.appendChild(item);
+  });
+  list.querySelectorAll('[data-pdf-open]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const i = +e.currentTarget.dataset.pdfOpen;
+      const it = state.compPdfs[i];
+      if (!it) return;
+      openPdfViewer(it);
+    });
+  });
+  list.querySelectorAll('[data-pdf-rm]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const i = +e.currentTarget.dataset.pdfRm;
+      const it = state.compPdfs[i];
+      if (!it) return;
+      if (!confirm(`「${it.name}」を削除しますか？`)) return;
+      state.compPdfs.splice(i, 1);
+      persistCurrent();
+      renderCompPdfs();
+    });
+  });
+}
+
+/* ════════════════════════════════════════════════
+ *  PDF / IMAGE VIEWER MODAL
+ *  Uses <embed> for PDFs (browsers' built-in viewer),
+ *  <img> for images. Both work from file:// URLs.
+ *  Provides a fallback download link if PDF inline
+ *  rendering fails (some Safari / mobile setups).
+ * ════════════════════════════════════════════════ */
+function openPdfViewer(it){
+  if (!it || !it.dataUrl) return;
+  const viewer = document.getElementById('pdf-viewer');
+  const body = document.getElementById('pdf-viewer-body');
+  const title = document.getElementById('pdf-viewer-title');
+  const dl = document.getElementById('pdf-viewer-download');
+  if (!viewer || !body) return;
+
+  title.textContent = it.name || 'プレビュー';
+  dl.href = it.dataUrl;
+  dl.download = it.name || (it.dataUrl.startsWith('data:image/') ? 'image' : 'document.pdf');
+
+  // Explicit branching: image data URLs use <img>, everything else (PDF) uses <embed>.
+  if (it.dataUrl.startsWith('data:image/')) {
+    body.classList.add('pdf-viewer-body-img');
+    body.innerHTML = `<img src="${it.dataUrl}" alt="${escAttr(it.name||'')}" style="max-width:100%; max-height:100%; object-fit:contain;" />`;
+  } else {
+    body.classList.remove('pdf-viewer-body-img');
+    body.innerHTML =
+      `<embed src="${it.dataUrl}" type="application/pdf" />
+       <div class="pdf-viewer-fallback" style="display:none">
+         <p>このブラウザではPDFのプレビュー表示ができないようです。<br>下のボタンからダウンロードしてご覧ください。</p>
+         <a class="pdf-viewer-dl-big" href="${it.dataUrl}" download="${escAttr(it.name||'document.pdf')}">PDFをダウンロード</a>
+       </div>`;
+    // After mount: if the embed didn't render (height 0 or no PDF support), show fallback
+    setTimeout(() => {
+      const emb = body.querySelector('embed');
+      const fb = body.querySelector('.pdf-viewer-fallback');
+      if (emb && fb && emb.offsetHeight < 60) {
+        emb.style.display = 'none';
+        fb.style.display = 'flex';
+      }
+    }, 600);
+  }
+
+  viewer.classList.add('active');
+}
+
+function closePdfViewer(){
+  const viewer = document.getElementById('pdf-viewer');
+  const body = document.getElementById('pdf-viewer-body');
+  if (viewer) viewer.classList.remove('active');
+  // Clear body to release the data URL from memory
+  if (body) body.innerHTML = '';
+}
+
+function updatePlanComputed(){
+  const p = state.plan;
+  const proj = state.project;
+
+  // ── Income calculation (annual = area × per-sqm × 12) ──
+  const totalArea = num(p.unitArea);
+  const annualIncome = Math.round(totalArea * num(p.rentPerSqm) * 12);
+  document.getElementById('plan-annual-income').value = fmt(annualIncome);
+  document.getElementById('hint-annual-income').textContent = annualIncome ? fmtMan(annualIncome) : '— 万円';
+
+  // ── Build cost hint ──
+  const buildCost = num(p.buildCostManual);
+  document.getElementById('hint-build-cost').textContent = buildCost ? fmtMan(buildCost) : '— 万円';
+
+  // ── Demolition cost (project-level) ──
+  const demolition = (proj.demolitionFlag === 'manual') ? num(proj.demolitionCost) : 0;
+  // Toggle visibility of demolition amount field
+  const demoWrap = document.getElementById('demolition-amt-wrap');
+  if (demoWrap) demoWrap.style.display = (proj.demolitionFlag === 'manual') ? '' : 'none';
+  const hintDemo = document.getElementById('hint-demolition');
+  if (hintDemo) hintDemo.textContent = demolition ? fmtMan(demolition) : '— 万円';
+
+  // ── Buy-side broker fee (3% + ¥60k + 10% tax, auto) ──
+  let brokerBuy = 0;
+  if (proj.brokerBuyFlag === 'auto3') {
+    const base = num(proj.priceTotal);
+    if (base > 0) {
+      const sub = base * 0.03 + 60000;
+      brokerBuy = Math.floor(sub + sub * 0.10);
+    }
+  }
+  const brokerWrap = document.getElementById('broker-buy-amt-wrap');
+  if (brokerWrap) brokerWrap.style.display = (proj.brokerBuyFlag === 'auto3') ? '' : 'none';
+  const brokerAmtEl = document.getElementById('broker-buy-amt');
+  if (brokerAmtEl) brokerAmtEl.value = brokerBuy ? Number(brokerBuy).toLocaleString('ja-JP') : '';
+  const hintBrokerBuy = document.getElementById('hint-broker-buy');
+  if (hintBrokerBuy) hintBrokerBuy.textContent = brokerBuy ? fmtMan(brokerBuy) : '— 万円';
+
+  // ── Land all-in cost (including demolition + broker) ──
+  const land = num(proj.priceTotal);
+  const landAllIn = land + demolition + brokerBuy;
+
+  // ── Building yield (actual = annual / (land all-in + build)) ──
+  const totalDevCost = landAllIn + buildCost;
+  const buildYieldActual = totalDevCost > 0 ? (annualIncome / totalDevCost * 100) : 0;
+  document.getElementById('plan-build-yield-actual').value = buildYieldActual ? buildYieldActual.toFixed(2) : '';
+
+  // ── Land tsubo display ──
+  const tsubo = m2ToTsubo(num(proj.landArea));
+  document.getElementById('hint-tsubo').textContent = tsubo ? `${fmt2(tsubo)} 坪` : '— 坪';
+
+  // ── Land price display ──
+  document.getElementById('hint-price').textContent =
+    land ? `${fmtMan(land)} / ${tsubo ? fmt(land/tsubo) + ' 円/坪 (' + fmt2(land/tsubo/10000) + ' 万円/坪)' : '坪単価—'}` : '— 万円';
+
+  // ── Strategy A: 企画付土地再販 ──
+  // 買主視点 総事業費 = 年収 ÷ 買主想定利回り
+  // → 投資家が払う総額は「土地再販価格 + 建築費」となる
+  // → 土地再販価格 = 総事業費 − 建築費
+  // 弊社視点：土地転売益 = 土地再販価格 − (土地仕入 + 解体 + 仲介手数料)
+  const buyerYield = num(p.buyerYield) / 100;
+  const buyerTotal = buyerYield > 0 ? Math.round(annualIncome / buyerYield) : 0;
+  const landResale = Math.max(0, buyerTotal - buildCost);
+  const landProfit = landResale - landAllIn;
+  document.getElementById('planA-buyer-total').value = fmt(buyerTotal);
+  document.getElementById('planA-buyer-total-sub').textContent = buyerTotal ? `${fmtMan(buyerTotal)}（年収 ÷ ${(num(p.buyerYield)).toFixed(1)}%）` : '年収 ÷ 買主利回り';
+  document.getElementById('planA-land-resale').value = fmt(landResale);
+  document.getElementById('planA-land-resale-sub').textContent = landResale ? `${fmtMan(landResale)} ＝ 総事業費 − 建築費` : '＝ 総事業費 − 建築費';
+  document.getElementById('planA-land-profit').value = fmt(landProfit);
+  const allInDesc = (demolition || brokerBuy) ? `（仕入${fmtMan(land)}＋解体${fmtMan(demolition)}＋仲手${fmtMan(brokerBuy)}）` : '';
+  document.getElementById('planA-land-profit-sub').textContent = landProfit ? `${fmtMan(landProfit)} ＝ 再販 − 仕入総額${allInDesc}` : '＝ 再販 − 仕入総額';
+  document.getElementById('planA-target-y').textContent = (num(p.buyerYield)).toFixed(1);
+
+  // ── Strategy B: 新築開発販売 ──
+  // 原価 = 土地仕入 + 解体 + 仲介手数料 + 建築費（諸費用込み）
+  const buildY = num(p.buildYield) / 100;
+  const saleY  = num(p.saleYield) / 100;
+  const targetTotalB = buildY > 0 ? Math.round(annualIncome / buildY) : 0;
+  // 建築費上限 = 総事業費上限 − 土地all-in
+  const buildTargetB = Math.max(0, targetTotalB - landAllIn);
+  const salePriceB   = saleY > 0 ? Math.round(annualIncome / saleY) : 0;
+  const actualCost   = landAllIn + buildCost;
+  const multiple     = actualCost > 0 ? (salePriceB / actualCost) : 0;
+  const grossProfitB = salePriceB - actualCost;
+
+  document.getElementById('planB-target-total').value = fmt(targetTotalB);
+  document.getElementById('planB-target-total-sub').textContent = targetTotalB ? `${fmtMan(targetTotalB)}（年収 ÷ ${(num(p.buildYield)).toFixed(1)}%）` : '年収 ÷ 建築利回り';
+  document.getElementById('planB-build-target').value = fmt(buildTargetB);
+  document.getElementById('planB-build-target-sub').textContent = buildTargetB ? `${fmtMan(buildTargetB)} ＝ 総事業費 − 土地all-in` : '＝ 総事業費 − 土地all-in';
+  document.getElementById('planB-sale-price').value = fmt(salePriceB);
+  document.getElementById('planB-sale-price-sub').textContent = salePriceB ? `${fmtMan(salePriceB)}（年収 ÷ ${(num(p.saleYield)).toFixed(1)}%）` : '年収 ÷ 売却利回り';
+  document.getElementById('planB-multiple').value = multiple ? multiple.toFixed(2) : '';
+  document.getElementById('planB-gross-profit').value = fmt(grossProfitB);
+  document.getElementById('planB-gross-profit-sub').textContent = grossProfitB ? fmtMan(grossProfitB) : '— 万円';
+  document.getElementById('planB-by-disp').textContent = (num(p.buildYield)).toFixed(1);
+  document.getElementById('planB-sy-disp').textContent = (num(p.saleYield)).toFixed(1);
+
+  // ── Show only active exit panel ──
+  const mode = p.exitMode || 'A';
+  document.getElementById('panel-exit-A').classList.toggle('active', mode === 'A');
+  document.getElementById('panel-exit-B').classList.toggle('active', mode === 'B');
+  const radios = document.querySelectorAll('input[name="exitMode"]');
+  radios.forEach(r => { r.checked = (r.value === mode); });
+
+  // ── 3 KPIs ──
+  // KPI 1: 仕入価格（土地）
+  const landKpi = document.getElementById('kpi-land-buy');
+  if (landKpi) {
+    landKpi.innerHTML = fmt(land) + '<span class="k-unit"> 円</span>';
+    const tsuboUnit = tsubo ? `${fmt2(land/tsubo/10000)} 万円/坪` : '坪単価—';
+    document.getElementById('kpi-land-buy-sub').textContent = `${fmtMan(land)} / ${tsuboUnit}`;
+  }
+  // KPI 2: 逆算 土地再販価格 (A) or 想定売却価格 (B)
+  if (mode === 'A') {
+    document.getElementById('kpi-resale-label').textContent = '逆算 土地再販価格';
+    document.getElementById('kpi-yield-resale').innerHTML = fmt(landResale) + '<span class="k-unit"> 円</span>';
+    const resaleTsubo = tsubo && landResale ? `${fmt2(landResale/tsubo/10000)} 万円/坪` : '';
+    document.getElementById('kpi-resale-sub').textContent = `${fmtMan(landResale)}${resaleTsubo ? ' / ' + resaleTsubo : ''}`;
+  } else {
+    document.getElementById('kpi-resale-label').textContent = '想定売却価格（投資家へ）';
+    document.getElementById('kpi-yield-resale').innerHTML = fmt(salePriceB) + '<span class="k-unit"> 円</span>';
+    document.getElementById('kpi-resale-sub').textContent = `${fmtMan(salePriceB)} / 原価${multiple ? multiple.toFixed(2) : '—'}倍`;
+  }
+  // KPI 3: 想定粗利
+  const profit = mode === 'A' ? landProfit : grossProfitB;
+  document.getElementById('kpi-rough-profit').innerHTML =
+    fmt(profit) + '<span class="k-unit"> 円</span>';
+  document.getElementById('kpi-rough-profit-sub').textContent = fmtMan(profit) + (mode==='A' ? '（土地転売益）' : '（開発粗利）');
+}
+
+let _mapUpdateTid = null;
+let _lastMapSrc = '';
+function updateMap(){
+  const addr = (state.project.address || '').trim();
+  const url  = (state.project.mapUrl  || '').trim();
+  const link = document.getElementById('map-link');
+
+  // Link can update instantly (no network request)
+  if (url) {
+    link.href = url;
+    link.style.display = 'inline-flex';
+  } else if (addr) {
+    link.href = 'https://www.google.com/maps?q=' + encodeURIComponent(addr);
+    link.style.display = 'inline-flex';
+  } else {
+    link.style.display = 'none';
+  }
+
+  // Debounce iframe update — only reload after 500ms of no typing
+  clearTimeout(_mapUpdateTid);
+  _mapUpdateTid = setTimeout(() => {
+    const wrap = document.getElementById('map-wrap');
+    if (!wrap) return;
+    if (addr) {
+      const src = 'https://maps.google.com/maps?q=' + encodeURIComponent(addr) + '&t=&z=16&ie=UTF8&iwloc=&output=embed';
+      // Skip if address is unchanged (e.g. tab switch revisits same address)
+      if (src === _lastMapSrc) return;
+      _lastMapSrc = src;
+      wrap.innerHTML = `<iframe src="${src}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
+    } else {
+      _lastMapSrc = '';
+      wrap.innerHTML = '<div class="map-empty">住居表示を入力するとマップが表示されます</div>';
+    }
+  }, 500);
+}
+
+/* ════════════════════════════════════════════════
+ *  TAB 2 RENDERING
+ * ════════════════════════════════════════════════ */
+function renderTab2(){
+  // Sync project → biz for blank fields (one-way flow on first visit / on demand)
+  // Always synced on Tab 1 changes via syncProjectToBiz(), but here we re-sync inputs
+  syncInputsFromState();
+  renderCostsSection('land');
+  renderCostsSection('build');
+  renderCostsSection('sell');
+  updateBizComputed();
+}
+
+function renderCostsSection(section){
+  const target = document.getElementById('costs-' + section);
+  target.innerHTML = '';
+  const groups = COST_GROUP_ORDER[section];
+
+  groups.forEach(g => {
+    const groupInfo = COST_GROUPS[g];
+    const rows = Object.values(state.biz.costs).filter(r => r.group === g);
+    if (!rows.length) return;
+
+    const groupDiv = document.createElement('div');
+    groupDiv.className = 'cost-group';
+    groupDiv.innerHTML = `
+      <div class="cost-group-title">
+        <span>${groupInfo.title}</span>
+        <span class="meta" id="group-meta-${g}"></span>
+      </div>
+    `;
+
+    rows.forEach(r => {
+      const row = document.createElement('div');
+      const hasParams = r.formula && (r.rate !== undefined || r.tax !== undefined || r.fixed !== undefined || r.months !== undefined || r.share !== undefined);
+      row.className = 'cost-row' + (r.formula ? ' formula' : '') + (hasParams ? '' : ' no-params-hack');
+      row.dataset.rowId = r.id;
+      const paramsHtml = renderParams(r);
+      row.innerHTML = `
+        <div class="lbl">
+          <input class="field-label-edit" value="${escAttr(r.label)}" data-edit-label="${r.id}" />
+        </div>
+        ${paramsHtml}
+        <div class="val ${r.editable ? 'editable' : ''}" data-row-val="${r.id}">
+          ${r.editable
+              ? `<input type="text" class="num" value="${num(r.value) ? Number(r.value).toLocaleString('ja-JP') : ''}" data-edit-val="${r.id}" />`
+              : '<span data-show-val="' + r.id + '">—</span>'}
+        </div>
+      `;
+      groupDiv.appendChild(row);
+    });
+
+    if (groupInfo.subtotal) {
+      const st = document.createElement('div');
+      st.className = 'cost-subtotal';
+      st.innerHTML = `<div>小計</div><div class="val" data-subtotal="${g}">—</div>`;
+      groupDiv.appendChild(st);
+    }
+
+    target.appendChild(groupDiv);
+  });
+
+  // Section subtotal
+  const stRow = document.createElement('div');
+  stRow.className = 'cost-subtotal';
+  stRow.style.borderTop = '2px solid var(--ink)';
+  stRow.style.marginTop = '12px';
+  stRow.innerHTML = `<div>${ {land:'土地仕入 諸費用 合計', build:'建築 諸費用 合計', sell:'売却 諸費用 合計'}[section] }</div>
+    <div class="val" data-section-total="${section}">—</div>`;
+  target.appendChild(stRow);
+
+  // Wire up label editing
+  target.querySelectorAll('[data-edit-label]').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const id = e.target.dataset.editLabel;
+      state.biz.costs[id].label = e.target.value;
+    });
+  });
+  // Editable values
+  target.querySelectorAll('[data-edit-val]').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const id = e.target.dataset.editVal;
+      state.biz.costs[id].value = num(e.target.value);
+      updateBizComputed();
+    });
+    inp.addEventListener('focus', e => {
+      const id = e.target.dataset.editVal;
+      const v = state.biz.costs[id].value;
+      if (v) e.target.value = String(v);
+    });
+    inp.addEventListener('blur', e => {
+      const id = e.target.dataset.editVal;
+      const v = num(state.biz.costs[id].value);
+      e.target.value = v ? Number(v).toLocaleString('ja-JP') : '';
+    });
+  });
+  // Param inputs
+  target.querySelectorAll('[data-param]').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const [id, key] = e.target.dataset.param.split(':');
+      const v = num(e.target.value) / (e.target.dataset.scale === 'pct' ? 100 : 1);
+      state.biz.costs[id][key] = v;
+      updateBizComputed();
+    });
+    // Comma formatting for "固定" (non-pct) numeric params on blur
+    if (!inp.dataset.scale) {
+      inp.addEventListener('focus', e => {
+        const [id, key] = e.target.dataset.param.split(':');
+        const v = state.biz.costs[id][key];
+        if (v) e.target.value = String(v);
+      });
+      inp.addEventListener('blur', e => {
+        const [id, key] = e.target.dataset.param.split(':');
+        const v = num(state.biz.costs[id][key]);
+        if (v) e.target.value = Number(v).toLocaleString('ja-JP');
+      });
+    }
+  });
+}
+
+function renderParams(r){
+  if (!r.formula) return '<div class="param"></div><div class="param"></div><div class="param"></div><div class="param"></div>';
+  if (r.formula === '=F24' || r.formula === '=F25') {
+    return `<div class="param" colspan="4" style="grid-column:span 4; font-family:var(--mono); color:var(--soft); font-size:10px">${r.formula}</div>`;
+  }
+  if (r.formula === 'rate+tax+fixed') {
+    return `
+      <div class="param"><span class="lbl-sm">率</span><input data-param="${r.id}:rate" data-scale="pct" value="${(r.rate*100).toFixed(2)}" /><span class="unit-sm">%</span></div>
+      <div class="param"><span class="lbl-sm">税</span><input data-param="${r.id}:tax" data-scale="pct" value="${(r.tax*100).toFixed(1)}" /><span class="unit-sm">%</span></div>
+      <div class="param"><span class="lbl-sm">固定</span><input data-param="${r.id}:fixed" value="${r.fixed ? Number(r.fixed).toLocaleString('ja-JP') : 0}" /><span class="unit-sm">円</span></div>
+      <div class="param"></div>
+    `;
+  }
+  if (r.formula === 'landLoan*rate' || r.formula === 'buildCost*rate') {
+    return `
+      <div class="param"><span class="lbl-sm">融資率</span><input data-param="${r.id}:rate" data-scale="pct" value="${(r.rate*100).toFixed(2)}" /><span class="unit-sm">%</span></div>
+      <div class="param"></div><div class="param"></div><div class="param"></div>
+    `;
+  }
+  if (r.formula === 'landLoan*rate*months/12') {
+    return `
+      <div class="param"><span class="lbl-sm">短期金利</span><input data-param="${r.id}:rate" data-scale="pct" value="${(r.rate*100).toFixed(2)}" /><span class="unit-sm">%</span></div>
+      <div class="param"><span class="lbl-sm">保有月</span><input data-param="${r.id}:months" value="${r.months}" /><span class="unit-sm">月</span></div>
+      <div class="param"></div><div class="param"></div>
+    `;
+  }
+  if (r.formula === 'buildLoan*share*rate*months/12') {
+    return `
+      <div class="param"><span class="lbl-sm">執行比</span><input data-param="${r.id}:share" data-scale="pct" value="${(r.share*100).toFixed(0)}" /><span class="unit-sm">%</span></div>
+      <div class="param"><span class="lbl-sm">金利</span><input data-param="${r.id}:rate" data-scale="pct" value="${(r.rate*100).toFixed(2)}" /><span class="unit-sm">%</span></div>
+      <div class="param"><span class="lbl-sm">月数</span><input data-param="${r.id}:months" value="${r.months}" /><span class="unit-sm">月</span></div>
+      <div class="param"></div>
+    `;
+  }
+  // Default (formula but no params)
+  return `<div class="param" colspan="4" style="grid-column:span 4; font-family:var(--mono); color:var(--soft); font-size:10px">自動計算</div>`;
+}
+
+function updateBizComputed(){
+  const r = computeBiz();
+
+  // Header derived
+  const tsubo = m2ToTsubo(num(state.biz.landAreaM2));
+  document.getElementById('biz-hint-tsubo').textContent = tsubo ? `${fmt2(tsubo)} 坪` : '— 坪';
+  document.getElementById('biz-bldg-eval-new').value = fmt(r.bldgEvalNew);
+  document.getElementById('biz-tax-buy').value = fmt(r.taxBuy);
+  document.getElementById('biz-tax-new').value = fmt(r.taxNew);
+
+  // Yields
+  document.getElementById('biz-yield-build').innerHTML = fmtPct(r.yieldBuild, 2) + '<span class="k-unit"></span>';
+  document.getElementById('biz-yield-high').innerHTML  = fmtPct(r.yieldHigh, 2)  + '<span class="k-unit"></span>';
+  document.getElementById('biz-yield-low').innerHTML   = fmtPct(r.yieldLow, 2)   + '<span class="k-unit"></span>';
+
+  // Cost row values
+  for (const id in state.biz.costs) {
+    const showEl = document.querySelector(`[data-show-val="${id}"]`);
+    if (showEl) showEl.textContent = fmt(r.computed[id]);
+  }
+  // Group subtotals
+  for (const g in r.groupTotals) {
+    const el = document.querySelector(`[data-subtotal="${g}"]`);
+    if (el) el.textContent = fmt(r.groupTotals[g]);
+    const meta = document.getElementById('group-meta-' + g);
+    if (meta) meta.textContent = ''; // could put '4 items' etc.
+  }
+  // Section totals
+  ['land','build','sell'].forEach(s => {
+    const el = document.querySelector(`[data-section-total="${s}"]`);
+    if (el) el.textContent = fmt(r.sectionTotals[s]);
+  });
+
+  // Scenario summary
+  renderScenarios(r);
+}
+
+function renderScenarios(r){
+  const grid = document.getElementById('scenario-grid');
+  const line = (lbl, val, opts={}) => `
+    <div class="scenario-line ${opts.cls||''}">
+      <span class="lbl">${lbl}</span><span class="val">${val}</span>
+    </div>`;
+  const highHtml = `
+    <div class="scenario-card">
+      <h3>販売予定価格（上） <span class="badge">SCENARIO A</span></h3>
+      ${line('土地仕入 諸費用 合計', fmt(r.sectionTotals.land) + ' 円')}
+      ${line('建築 諸費用 合計', fmt(r.sectionTotals.build) + ' 円')}
+      ${line('売却 諸費用 合計', fmt(r.sectionTotals.sell) + ' 円')}
+      ${line('総事業費合計', fmt(r.totalCost) + ' 円', {cls:'big'})}
+      ${line('販売予定価格', fmt(r.ctx.salePriceHigh) + ' 円', {cls:'big'})}
+      ${line('事業利益', fmt(r.profitHigh) + ' 円', {cls: 'big ' + (r.profitHigh>=0?'profit':'loss')})}
+      ${line('利益率', fmtPct(r.marginHigh, 2), {cls:'big'})}
+    </div>`;
+  const lowHtml = `
+    <div class="scenario-card low">
+      <h3>販売予定価格（下） <span class="badge">SCENARIO B</span></h3>
+      ${line('土地仕入 諸費用 合計', fmt(r.sectionTotalsLow.land) + ' 円')}
+      ${line('建築 諸費用 合計', fmt(r.sectionTotalsLow.build) + ' 円')}
+      ${line('売却 諸費用 合計', fmt(r.sectionTotalsLow.sell) + ' 円')}
+      ${line('総事業費合計', fmt(r.totalCostLow) + ' 円', {cls:'big'})}
+      ${line('販売予定価格', fmt(r.ctx.salePriceLow) + ' 円', {cls:'big'})}
+      ${line('事業利益', fmt(r.profitLow) + ' 円', {cls: 'big ' + (r.profitLow>=0?'profit':'loss')})}
+      ${line('利益率', fmtPct(r.marginLow, 2), {cls:'big'})}
+    </div>`;
+  grid.innerHTML = highHtml + lowHtml;
+}
+
+/* ════════════════════════════════════════════════
+ *  TAB 3 RENDERING
+ * ════════════════════════════════════════════════ */
+function regenDevUnits(){
+  // Generate dev.units from plan.unitCount/unitArea when empty
+  if (state.dev.units.length === 0) {
+    const count = num(state.plan.unitCount);
+    const totalArea = num(state.plan.unitArea);
+    const avgArea = count > 0 ? totalArea / count : 0;
+    const rentPerSqm = num(state.plan.rentPerSqm);
+    const fresh = [];
+    for (let i = 1; i <= count; i++) {
+      fresh.push({
+        roomNo: String(i).padStart(3,'0'),
+        floor: '',
+        type: '',
+        area: Math.round(avgArea * 100) / 100,
+        rent: Math.round(avgArea * rentPerSqm)
+      });
+    }
+    if (fresh.length) state.dev.units = fresh;
+  }
+}
+
+function renderTab3(){
+  syncInputsFromState();
+  renderUnitTable();
+  updateDevComputed();
+  renderSensitivity();
+}
+
+function renderUnitTable(){
+  const tbody = document.getElementById('unit-tbody');
+  tbody.innerHTML = '';
+  state.dev.units.forEach((u, i) => {
+    const per = num(u.area) > 0 ? Math.round(num(u.rent)/num(u.area)) : 0;
+    const annual = num(u.rent) * 12;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input value="${escAttr(u.roomNo)}" data-u="${i}" data-k="roomNo" /></td>
+      <td><input value="${escAttr(u.floor)}" data-u="${i}" data-k="floor" /></td>
+      <td><input value="${escAttr(u.type)}" data-u="${i}" data-k="type" /></td>
+      <td class="num"><input value="${u.area || ''}" data-u="${i}" data-k="area" data-type="num" /></td>
+      <td class="num"><input value="${u.rent ? Number(u.rent).toLocaleString('ja-JP') : ''}" data-u="${i}" data-k="rent" data-type="num" /></td>
+      <td class="num" style="font-family:var(--mono); color:var(--muted)">${per ? per.toLocaleString() : '—'}</td>
+      <td class="num" style="font-family:var(--mono)">${fmt(annual)}</td>
+      <td><button class="rm" data-rm-unit="${i}">×</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  tbody.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const i = +e.target.dataset.u;
+      const k = e.target.dataset.k;
+      const v = e.target.dataset.type === 'num' ? num(e.target.value) : e.target.value;
+      state.dev.units[i][k] = v;
+      updateDevComputed();
+      const tr = e.target.closest('tr');
+      const u = state.dev.units[i];
+      const per = num(u.area) > 0 ? Math.round(num(u.rent)/num(u.area)) : 0;
+      const annual = num(u.rent) * 12;
+      tr.cells[5].textContent = per ? per.toLocaleString() : '—';
+      tr.cells[6].textContent = fmt(annual);
+    });
+    if (inp.dataset.type === 'num') {
+      inp.addEventListener('focus', e => {
+        const i = +e.target.dataset.u;
+        const k = e.target.dataset.k;
+        const v = state.dev.units[i][k];
+        if (v) e.target.value = String(v);
+      });
+      inp.addEventListener('blur', e => {
+        const i = +e.target.dataset.u;
+        const k = e.target.dataset.k;
+        const v = state.dev.units[i][k];
+        if (v) e.target.value = Number(v).toLocaleString('ja-JP', {maximumFractionDigits:6});
+      });
+    }
+  });
+  tbody.querySelectorAll('[data-rm-unit]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      state.dev.units.splice(+e.target.dataset.rmUnit, 1);
+      renderUnitTable();
+      updateDevComputed();
+    });
+  });
+}
+
+function updateDevComputed(){
+  const sumArea = state.dev.units.reduce((s,u) => s + num(u.area), 0);
+  const sumRent = state.dev.units.reduce((s,u) => s + num(u.rent), 0);
+  const annual  = sumRent * 12;
+  document.getElementById('unit-sum-area').textContent = fmt2(sumArea);
+  document.getElementById('unit-sum-rent').textContent = fmt(sumRent);
+  document.getElementById('unit-sum-annual').textContent = fmt(annual);
+
+  // NOI
+  const r = computeBiz();
+  const grossIncome = annual || num(state.biz.annualIncome);
+  const vacancy = num(state.dev.vacancy) / 100;
+  const effIncome = grossIncome * (1 - vacancy);
+  const opex = num(state.dev.repair) + r.taxNew;
+  const noi = effIncome - opex;
+  const noiYield = num(state.biz.salePriceHigh) ? noi / num(state.biz.salePriceHigh) : 0;
+
+  document.getElementById('dev-tax').value = fmt(r.taxNew);
+  document.getElementById('dev-eff-income').innerHTML = fmt(effIncome) + '<span class="k-unit"> 円</span>';
+  document.getElementById('dev-eff-income-sub').textContent = fmtMan(effIncome);
+  document.getElementById('dev-opex').innerHTML = fmt(opex) + '<span class="k-unit"> 円</span>';
+  document.getElementById('dev-opex-sub').textContent = fmtMan(opex);
+  document.getElementById('dev-noi').innerHTML = fmt(noi) + '<span class="k-unit"> 円</span>';
+  document.getElementById('dev-noi-sub').textContent = fmtMan(noi);
+  document.getElementById('dev-noi-yield').innerHTML = fmtPct(noiYield, 2) + '<span class="k-unit"></span>';
+}
+
+function renderSensitivity(){
+  const r = computeBiz();
+  // Use current annual income as base, vary by ±10%
+  const baseIncome = state.dev.units.reduce((s,u) => s + num(u.rent)*12, 0) || num(state.biz.annualIncome);
+  if (!baseIncome) {
+    document.getElementById('sens-table').innerHTML = '<tr><td>賃料データが未入力です</td></tr>';
+    return;
+  }
+  const incomes = [-0.10, -0.05, 0, 0.05, 0.10].map(d => baseIncome * (1+d));
+  const yields  = [0.040, 0.045, 0.050, 0.055, 0.060];
+
+  let html = '<thead><tr><th class="corner">賃料 ＼ 利回り</th>';
+  yields.forEach(y => html += `<th>${(y*100).toFixed(1)}%</th>`);
+  html += '</tr></thead><tbody>';
+
+  incomes.forEach((inc, ri) => {
+    const lbl = ['−10%','−5%','基準','+5%','+10%'][ri];
+    html += `<tr><th style="text-align:left">${lbl}（${fmt(inc)}円）</th>`;
+    yields.forEach(y => {
+      const price = inc / y;
+      const profit = price - r.totalCost;
+      const margin = r.totalCost ? profit / r.totalCost : 0;
+      const cls = profit < 0 ? 'bad' : (margin > 0.08 ? 'good' : '');
+      html += `<td class="${cls}" title="想定価格: ${fmt(price)}円 / 利益: ${fmt(profit)}円 / 利益率: ${fmtPct(margin)}">${fmtMan(price)}<br><span style="font-size:10px">${fmtPct(margin,1)}</span></td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody>';
+  document.getElementById('sens-table').innerHTML = html;
+}
+
+/* ════════════════════════════════════════════════
+ *  STATE ↔ DOM SYNC
+ * ════════════════════════════════════════════════ */
+function syncInputsFromState(){
+  const active = document.activeElement;
+  document.querySelectorAll('[data-k]').forEach(el => {
+    // CRITICAL FIX: skip the currently focused input so user can keep typing
+    // without the cursor jumping or the value being overwritten mid-edit
+    if (el === active) return;
+    const path = el.dataset.k;
+    const v = getPath(state, path);
+    if (v === undefined || v === null) return;
+    if (el.dataset.type === 'num') {
+      // Show comma-separated value when not focused; raw when focused
+      const raw = (v === 0 ? '' : String(v));
+      const formatted = (v === 0 || v === '') ? '' : Number(v).toLocaleString('ja-JP', {maximumFractionDigits:6});
+      const newVal = formatted;
+      if (el.value !== newVal) el.value = newVal;
+    } else {
+      if (el.value !== v) el.value = v;
+    }
+  });
+}
+
+function bindStateInputs(){
+  document.querySelectorAll('[data-k]').forEach(el => {
+    el.addEventListener('input', e => {
+      const path = el.dataset.k;
+      const v = el.dataset.type === 'num' ? num(el.value) : el.value;
+      setPath(state, path, v);
+      onAnyChange(path);
+    });
+    // For number inputs: show raw on focus (so user can edit), formatted on blur
+    if (el.dataset.type === 'num') {
+      el.addEventListener('focus', e => {
+        const v = getPath(state, el.dataset.k);
+        if (v !== undefined && v !== null && v !== 0 && v !== '') {
+          el.value = String(v);
+        }
+      });
+      el.addEventListener('blur', e => {
+        const v = getPath(state, el.dataset.k);
+        if (v !== undefined && v !== null && v !== 0 && v !== '') {
+          el.value = Number(v).toLocaleString('ja-JP', {maximumFractionDigits:6});
+        }
+      });
+    }
+  });
+}
+
+function onAnyChange(path){
+  // Project→Biz mirroring (one-directional). Mirror only if biz field is empty.
+  if (path === 'project.name')    { if (!state.biz.title)   state.biz.title   = state.project.name; }
+  if (path === 'project.address') { if (!state.biz.address) state.biz.address = state.project.address; updateMap(); renderJoureiBox(); }
+  if (path === 'project.mapUrl')  { updateMap(); }
+  if (path === 'project.landArea'){ if (!state.biz.landAreaM2) state.biz.landAreaM2 = state.project.landArea; }
+  if (path === 'project.priceTotal') { if (!state.biz.landBuyPrice) state.biz.landBuyPrice = state.project.priceTotal; }
+  if (path === 'project.zoning')  { if (!state.biz.zoning)  state.biz.zoning  = state.project.zoning; }
+  if (path === 'project.coverage'){ if (!state.biz.coverage || state.biz.coverage === 80) state.biz.coverage = state.project.coverage; }
+  if (path === 'project.far')     { if (!state.biz.far || state.biz.far === 500) state.biz.far = state.project.far; }
+  if (path === 'plan.totalFloorArea') { if (!state.biz.bldgFloorArea) state.biz.bldgFloorArea = state.plan.totalFloorArea; }
+  if (path === 'plan.buildCostManual') { if (!state.biz.buildCost) state.biz.buildCost = state.plan.buildCostManual; }
+  if (path === 'plan.unitArea' || path === 'plan.unitCount') { renderJoureiBox(); }
+
+  updatePlanComputed();
+  updateBizComputed();
+  if (document.querySelector('.panel[data-panel="3"].active')) {
+    updateDevComputed();
+    renderSensitivity();
+  }
+  syncInputsFromState();
+}
+
+/* ════════════════════════════════════════════════
+ *  TAB SWITCHING
+ * ════════════════════════════════════════════════ */
+function switchTab(n){
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab == n));
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.dataset.panel == n));
+  if (n === '2' || n === 2) {
+    // First-time mirror project → biz for blanks
+    mirrorProjectToBizBlank();
+    renderTab2();
+  } else if (n === '3' || n === 3) {
+    regenDevUnits();
+    renderTab3();
+  } else {
+    renderTab1();
+  }
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function mirrorProjectToBizBlank(){
+  const b = state.biz;
+  const p = state.project;
+  const pl = state.plan;
+  if (!b.title   && p.name)    b.title   = p.name;
+  if (!b.address && p.address) b.address = p.address;
+  if (!b.landAreaM2 && p.landArea) b.landAreaM2 = p.landArea;
+  if (!b.zoning  && p.zoning)  b.zoning  = p.zoning;
+  if (!b.coverage && p.coverage) b.coverage = p.coverage;
+  if (!b.far && p.far) b.far = p.far;
+  if (!b.units   && num(pl.unitCount)) {
+    b.units = num(pl.unitCount) + '戸';
+  }
+  if (!b.floors  && pl.floorPlan)  b.floors  = pl.floorPlan;
+  if (!b.structure && pl.structure) b.structure = pl.structure;
+  if (!b.bldgFloorArea && pl.totalFloorArea) b.bldgFloorArea = pl.totalFloorArea;
+  if (!b.annualIncome) {
+    b.annualIncome = Math.round(num(pl.unitArea) * num(pl.rentPerSqm) * 12);
+  }
+  if (!b.landBuyPrice && p.priceTotal) b.landBuyPrice = p.priceTotal;
+  if (!b.buildCost && pl.buildCostManual) b.buildCost = num(pl.buildCostManual);
+
+  // Sale price: depends on exit strategy
+  const annual = num(pl.unitArea) * num(pl.rentPerSqm) * 12;
+  if (pl.exitMode === 'A') {
+    // Strategy A: 土地再販 — biz sale prices reflect what buyer pays for land
+    const buyerY = num(pl.buyerYield) / 100;
+    if (buyerY > 0) {
+      const buyerTotal = annual / buyerY;
+      const landResale = Math.max(0, buyerTotal - num(pl.buildCostManual));
+      if (!b.salePriceHigh) b.salePriceHigh = Math.round(landResale);
+      if (!b.salePriceLow)  b.salePriceLow  = Math.round(landResale * 0.92);
+    }
+  } else {
+    // Strategy B: 新築開発販売 — sale price at 売却利回り
+    const saleY = num(pl.saleYield) / 100;
+    if (saleY > 0) {
+      const salePrice = annual / saleY;
+      if (!b.salePriceHigh) b.salePriceHigh = Math.round(salePrice);
+      if (!b.salePriceLow)  b.salePriceLow  = Math.round(salePrice * 0.92);
+    }
+  }
+}
+
+/* ════════════════════════════════════════════════
+ *  PERSISTENCE
+ * ════════════════════════════════════════════════ */
+const STORAGE_KEY = 'reInvestSim/v1';
+const SAVES_KEY   = 'reInvestSim/v1/saves';
+
+function getSaves(){
+  try { return JSON.parse(localStorage.getItem(SAVES_KEY) || '[]'); }
+  catch { return []; }
+}
+function setSaves(s){ localStorage.setItem(SAVES_KEY, JSON.stringify(s)); }
+
+function persistCurrent(){
+  // Never write to localStorage when running as a shared (view-only) HTML
+  if (window.IS_SHARED_HTML) return;
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e){}
+}
+function loadCurrent(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const obj = JSON.parse(raw);
+    const def = defaultState();
+    // Deep-merge: ensure every top-level section retains default fields if user's
+    // saved state is missing them (e.g. schema added plan.unitArea, exit strategy, etc.)
+    state = {
+      project: Object.assign({}, def.project, obj.project || {}),
+      plan:    Object.assign({}, def.plan, obj.plan || {}),
+      comps:   Array.isArray(obj.comps) ? obj.comps : def.comps,
+      compPdfs: Array.isArray(obj.compPdfs) ? obj.compPdfs : def.compPdfs,
+      biz:     Object.assign({}, def.biz, obj.biz || {}),
+      dev:     Object.assign({}, def.dev, obj.dev || {})
+    };
+    // Force fixed values (in case loaded from older state)
+    state.project.rights = '所有権';
+    if (!state.plan.structure) state.plan.structure = '壁式RC造';
+    if (!state.biz.structure) state.biz.structure = '壁式RC造';
+    if (!state.plan.exitMode) state.plan.exitMode = 'A';
+    // Strip obsolete fields from old schema
+    delete state.plan.unitMix;
+    delete state.plan.targetYield;
+    delete state.plan.resalePrice;
+    delete state.dev.mgmtRate;
+    state.dev.units = (state.dev.units || []).map(u => { delete u.cam; return u; });
+    // Re-merge costs (in case schema added rows)
+    const defCosts = defaultCosts();
+    state.biz.costs = state.biz.costs || {};
+    for (const id in defCosts) {
+      if (state.biz.costs[id]) {
+        state.biz.costs[id] = Object.assign({}, defCosts[id], state.biz.costs[id]);
+      } else {
+        state.biz.costs[id] = defCosts[id];
+      }
+    }
+    return true;
+  } catch (e) { console.error(e); return false; }
+}
+
+/* ════════════════════════════════════════════════
+ *  MEMO (Slack-friendly)
+ * ════════════════════════════════════════════════ */
+function buildMemo(){
+  const p = state.project;
+  const pl = state.plan;
+  const b = state.biz;
+  const r = computeBiz();
+  const lines = [];
+  lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━');
+  lines.push(`【投資検討】${p.name || b.title || '（無題）'}`);
+  lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━');
+  lines.push('');
+  lines.push('〈物件概要〉');
+  if (p.address) lines.push(`住居表示：${p.address}${p.lot ? '（地番：'+p.lot+'）' : ''}`);
+  if (p.mapUrl) lines.push(`Googleマップ：${p.mapUrl}`);
+  if (p.stations && p.stations.length) {
+    const sList = p.stations.filter(s=>s.line||s.station).map(s => `${s.line}「${s.station}」駅 徒歩${s.minutes||'—'}分`);
+    if (sList.length) lines.push('最寄り駅：' + sList.join(' / '));
+  }
+  if (p.landArea) {
+    const t = m2ToTsubo(num(p.landArea));
+    lines.push(`土地面積：${fmt2(num(p.landArea))}㎡（${fmt2(t)}坪）`);
+  }
+  if (p.priceTotal) {
+    const t = m2ToTsubo(num(p.landArea));
+    const tsuboUnit = t ? `（坪${(num(p.priceTotal)/t/10000).toFixed(0)}万円）` : '';
+    lines.push(`仕入価格：${fmt(num(p.priceTotal)/10000)}万円${tsuboUnit}`);
+  }
+  // Demolition + broker (incorporated into landAllIn)
+  const demolition = (p.demolitionFlag === 'manual') ? num(p.demolitionCost) : 0;
+  let brokerBuy = 0;
+  if (p.brokerBuyFlag === 'auto3' && num(p.priceTotal) > 0) {
+    const sub = num(p.priceTotal) * 0.03 + 60000;
+    brokerBuy = Math.floor(sub + sub * 0.10);
+  }
+  if (demolition) lines.push(`解体費用：${fmt(demolition/10000)}万円`);
+  if (brokerBuy) lines.push(`仲介手数料（仕入）：${fmt(brokerBuy/10000)}万円（3%+6万+税）`);
+  const landAllIn = num(p.priceTotal) + demolition + brokerBuy;
+  if (demolition || brokerBuy) {
+    lines.push(`仕入総額（all-in）：${fmt(landAllIn/10000)}万円`);
+  }
+  if (p.zoning) lines.push(`用途：${p.zoning}（${p.coverage||'—'}/${p.far||'—'}）`);
+  if (p.road) lines.push(`道路：${p.road}`);
+  if (p.notes) lines.push(`その他：${p.notes.replace(/\n/g, ' / ')}`);
+  lines.push('');
+  lines.push('〈プラン〉');
+  if (pl.floorPlan) lines.push(`プラン：${pl.floorPlan}`);
+  if (pl.structure) lines.push(`構造：${pl.structure}`);
+  if (pl.totalFloorArea) lines.push(`延床：${fmt2(num(pl.totalFloorArea))}㎡`);
+  if (pl.unitArea || pl.unitCount) {
+    lines.push(`専有：${fmt2(num(pl.unitArea))}㎡ × ${num(pl.unitCount)}戸`);
+  }
+  if (pl.rentPerSqm) {
+    const ann = num(pl.unitArea) * num(pl.rentPerSqm) * 12;
+    lines.push(`賃料単価：${fmt(num(pl.rentPerSqm))}円/㎡`);
+    if (ann) lines.push(`満室年収：${fmt(ann/10000)}万円（${fmt2(num(pl.unitArea))}㎡×${fmt(num(pl.rentPerSqm))}円×12月）`);
+  }
+  if (pl.buildCostManual) lines.push(`建築費：${fmt(num(pl.buildCostManual)/10000)}万円`);
+  // 建築利回り (incl land all-in)
+  const annAll = num(pl.unitArea) * num(pl.rentPerSqm) * 12;
+  const totalDev = landAllIn + num(pl.buildCostManual);
+  if (annAll && totalDev) {
+    lines.push(`建築利回り：${(annAll/totalDev*100).toFixed(2)}%（年収÷(土地all-in+建築)）`);
+  }
+
+  lines.push('');
+  lines.push('〈出口戦略〉');
+  if (pl.exitMode === 'A') {
+    lines.push(`Aモード：企画付土地再販（買主想定 ${num(pl.buyerYield).toFixed(1)}%）`);
+    const buyerY = num(pl.buyerYield) / 100;
+    if (buyerY > 0 && annAll) {
+      const buyerTotal = annAll / buyerY;
+      const landResale = Math.max(0, buyerTotal - num(pl.buildCostManual));
+      const landProfit = landResale - landAllIn;
+      lines.push(`総事業費：${fmt(buyerTotal/10000)}万円`);
+      lines.push(`土地再販価格：${fmt(landResale/10000)}万円`);
+      lines.push(`土地転売益：${fmt(landProfit/10000)}万円${(demolition || brokerBuy) ? '（解体・仲手控除後）' : ''}`);
+    }
+  } else {
+    lines.push(`Bモード：新築開発販売（${num(pl.buildYield).toFixed(1)}%で建てて${num(pl.saleYield).toFixed(1)}%で売る）`);
+    const saleY = num(pl.saleYield) / 100;
+    if (saleY > 0 && annAll) {
+      const salePrice = annAll / saleY;
+      const multiple = totalDev > 0 ? salePrice / totalDev : 0;
+      lines.push(`想定売却価格：${fmt(salePrice/10000)}万円`);
+      lines.push(`原価倍率：${multiple.toFixed(2)}倍`);
+      lines.push(`開発粗利（概算）：${fmt((salePrice-totalDev)/10000)}万円${(demolition || brokerBuy) ? '（解体・仲手込み）' : ''}`);
+    }
+  }
+
+  lines.push('');
+  lines.push('〈企画開発事業計画〉');
+  lines.push(`総事業費：${fmt(r.totalCost/10000)}万円`);
+  lines.push(`販売予定：${fmt(r.ctx.salePriceHigh/10000)}万円`);
+  lines.push(`事業利益：${fmt(r.profitHigh/10000)}万円（利益率${fmtPct(r.marginHigh,1)}）`);
+  lines.push(`表面利回り：${fmtPct(r.yieldBuild,2)}（建販総額）`);
+  lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━');
+  return lines.join('\n');
+}
+
+/* ════════════════════════════════════════════════
+ *  SAMPLE DATA
+ * ════════════════════════════════════════════════ */
+const SAMPLES = {
+  komagome: {
+    project: {
+      name:'豊島区駒込1-25-3 計画',
+      address:'東京都豊島区駒込1-25-3',
+      lot:'',
+      mapUrl:'https://maps.app.goo.gl/GwMvwCZmHXzGEjaF8',
+      stations:[
+        {line:'山手線', station:'駒込', minutes:3}
+      ],
+      landArea:85.65, rights:'所有権', surveyStatus:'',
+      priceTotal:170000000,
+      zoning:'近隣商業地域',
+      coverage:80, far:360,
+      road:'幅員6m',
+      fire:'準防火地域', otherReg:'高度日影なし。都市計画情報の土地区画整理事業に「完成」の文言がある場合は認定幅員優先。',
+      notes:'現況空渡し。プラン：地下1階地上5階10戸（メゾ以外29.84㎡8戸＝ワンルーム条例回避可）。専有：358.08㎡=59.68㎡×2戸+29.84㎡×8戸。'
+    },
+    plan: {
+      floorPlan:'地下1階地上5階',
+      structure:'壁式RC造',
+      totalFloorArea:430,
+      unitArea:358.08,
+      unitCount:10,
+      rentPerSqm:5700,
+      buildCostManual:285000000,
+      exitMode:'B',
+      buyerYield:5.0,
+      buildYield:5.5,
+      saleYield:3.7
+    },
+    comps:[],
+    biz: {
+      title:'豊島区駒込1-25-3 計画',
+      staffBuy:'', staffSell:'',
+      address:'東京都豊島区駒込1-25-3',
+      brokerBuy:'', brokerSell:'',
+      landAreaM2:85.65, structure:'壁式RC造', usage:'共同住宅',
+      floors:'地下1階地上5階', units:'10戸',
+      zoning:'近隣商業地域', coverage:80, far:360,
+      dateContractBuy:'', dateSettleBuy:'',
+      dateContractSell:'', dateSettleSell:'',
+      landTaxEval:35000000, bldgTaxEvalBuy:0, bldgFloorArea:430,
+      annualIncome:24492672,  // 358.08 × 5700 × 12
+      landBuyPrice:170000000,
+      buildCost:285000000,
+      landLoan:0, buildLoan:0,
+      salePriceHigh:662000000,  // 3.7% で売却 ≒ 6.62億円
+      salePriceLow:611000000,   // 4.0% で売却 ≒ 6.11億円
+      costs: defaultCosts()
+    },
+    dev: {
+      vacancy:5, repair:300000,
+      units:[]
+    }
+  },
+  higashijujo: {
+    project: {
+      name:'北区東十条3丁目 計画',
+      address:'東京都北区東十条3-1-2',
+      lot:'1番19',
+      mapUrl:'https://maps.app.goo.gl/ooiQmwzr3YbLudQ5A',
+      stations:[
+        {line:'京浜東北線', station:'東十条', minutes:4},
+        {line:'南北線', station:'王子神谷', minutes:11},
+        {line:'埼京線', station:'十条', minutes:14}
+      ],
+      landArea:92.56, rights:'所有権', surveyStatus:'確定測量確認中',
+      priceTotal:0,
+      zoning:'商業地域',
+      coverage:80, far:500,
+      road:'南西側幅員約5.99m',
+      fire:'防火地域', otherReg:'埋蔵文化財なし',
+      notes:'現況＝平成15年7月築、鉄骨造3層 延床面積171.69㎡。立ち退き後、空渡し。立ち退きに半年もかからない予定（軽い立ち退きのため）。確定測量確認中。'
+    },
+    plan: {
+      floorPlan:'地下1階地上5階',
+      structure:'壁式RC造',
+      totalFloorArea:280,
+      unitArea:358.08,
+      unitCount:10,
+      rentPerSqm:5700,
+      buildCostManual:0,
+      exitMode:'A',
+      buyerYield:5.0,
+      buildYield:5.5,
+      saleYield:3.7
+    },
+    comps:[
+      {name:'シーズンフラッツ東十条', rent:154000, area:26.71},
+      {name:'GRANPASEO東十条', rent:140000, area:25.27},
+      {name:'GRANPASEO東十条', rent:140000, area:25.32}
+    ],
+    biz: {
+      title:'北区東十条3丁目 計画',
+      staffBuy:'', staffSell:'',
+      address:'東京都北区東十条3-1-2',
+      brokerBuy:'', brokerSell:'',
+      landAreaM2:92.56, structure:'壁式RC造', usage:'共同住宅',
+      floors:'地下1階地上5階', units:'10戸',
+      zoning:'商業地域', coverage:80, far:500,
+      dateContractBuy:'', dateSettleBuy:'',
+      dateContractSell:'', dateSettleSell:'',
+      landTaxEval:35000000, bldgTaxEvalBuy:0, bldgFloorArea:280,
+      annualIncome:24492672,  // 358.08 × 5700 × 12
+      landBuyPrice:0,
+      buildCost:0,
+      landLoan:0, buildLoan:0,
+      salePriceHigh:0, salePriceLow:0,
+      costs: defaultCosts()
+    },
+    dev: {
+      vacancy:5, repair:300000,
+      units:[]
+    }
+  }
+};
+
+function loadSample(key){
+  const s = SAMPLES[key];
+  if (!s) return;
+  // Deep clone to avoid mutating the template
+  state = JSON.parse(JSON.stringify(s));
+  // Auto-calc annual income from manual plan inputs
+  const annual = num(state.plan.unitArea) * num(state.plan.rentPerSqm) * 12;
+  state.biz.annualIncome = Math.round(annual);
+}
+
+/* ════════════════════════════════════════════════
+ *  HELPERS
+ * ════════════════════════════════════════════════ */
+function escAttr(v){
+  if (v === null || v === undefined) return '';
+  return String(v).replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
+
+/* ════════════════════════════════════════════════
+ *  WIRE-UP / INIT
+ * ════════════════════════════════════════════════ */
+function wireUp(){
+  // Tabs
+  document.querySelectorAll('.tab').forEach(t => {
+    t.addEventListener('click', () => switchTab(t.dataset.tab));
+  });
+  // Add buttons
+  document.getElementById('add-station').addEventListener('click', () => {
+    state.project.stations.push({line:'', station:'', minutes:''}); renderStations();
+  });
+  document.getElementById('add-comp').addEventListener('click', () => {
+    state.comps.push({name:'', rent:0, area:0}); renderComps();
+  });
+
+  // PDF upload (comp section)
+  const pdfInput = document.getElementById('comp-pdf-input');
+  const pdfBtn = pdfInput.previousElementSibling;
+  if (pdfInput && pdfBtn) {
+    pdfInput.addEventListener('change', e => handlePdfFiles(e.target.files));
+    // Drag and drop
+    pdfBtn.addEventListener('dragover', e => {
+      e.preventDefault(); e.stopPropagation();
+      pdfBtn.classList.add('dragover');
+    });
+    pdfBtn.addEventListener('dragleave', e => {
+      e.preventDefault(); e.stopPropagation();
+      pdfBtn.classList.remove('dragover');
+    });
+    pdfBtn.addEventListener('drop', e => {
+      e.preventDefault(); e.stopPropagation();
+      pdfBtn.classList.remove('dragover');
+      const files = Array.from(e.dataTransfer.files).filter(f => f.type === 'application/pdf');
+      handlePdfFiles(files);
+    });
+  }
+  document.getElementById('add-unit-row').addEventListener('click', () => {
+    const n = state.dev.units.length + 1;
+    state.dev.units.push({roomNo:String(n).padStart(3,'0'), floor:'', type:'', area:0, rent:0});
+    renderUnitTable(); updateDevComputed();
+  });
+
+  // Exit strategy radio buttons
+  document.querySelectorAll('input[name="exitMode"]').forEach(r => {
+    r.addEventListener('change', e => {
+      state.plan.exitMode = e.target.value;
+      persistCurrent();
+      updatePlanComputed();
+    });
+  });
+
+  // Bind all state inputs
+  bindStateInputs();
+
+  // Auto-persist on changes
+  document.body.addEventListener('input', () => { persistCurrent(); });
+
+  // Sample
+  document.getElementById('btn-sample').addEventListener('click', () => {
+    document.getElementById('modal-sample').classList.add('active');
+  });
+  document.getElementById('sample-cancel').addEventListener('click', () => {
+    document.getElementById('modal-sample').classList.remove('active');
+  });
+  document.getElementById('modal-sample').addEventListener('click', e => {
+    if (e.target.id === 'modal-sample') document.getElementById('modal-sample').classList.remove('active');
+  });
+  document.querySelectorAll('[data-sample-pick]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const key = e.currentTarget.dataset.samplePick;
+      if (!confirm('現在の入力を上書きしてサンプルを読み込みます。よろしいですか？')) return;
+      loadSample(key);
+      persistCurrent();
+      document.getElementById('modal-sample').classList.remove('active');
+      switchTab(1);
+      renderTab1();
+      showToast('サンプルを読み込みました');
+    });
+  });
+
+  // Save
+  document.getElementById('btn-save').addEventListener('click', () => {
+    document.getElementById('save-name').value = state.project.name || state.biz.title || '';
+    document.getElementById('modal-save').classList.add('active');
+  });
+  document.getElementById('save-cancel').addEventListener('click', () => {
+    document.getElementById('modal-save').classList.remove('active');
+  });
+  document.getElementById('save-confirm').addEventListener('click', () => {
+    const name = document.getElementById('save-name').value.trim() || '無題';
+    const saves = getSaves();
+    saves.push({
+      name, ts: new Date().toISOString(),
+      data: JSON.parse(JSON.stringify(state))
+    });
+    setSaves(saves);
+    document.getElementById('modal-save').classList.remove('active');
+    showToast('保存しました：' + name);
+  });
+
+  // Load
+  document.getElementById('btn-load').addEventListener('click', () => {
+    renderSaveList();
+    document.getElementById('modal-load').classList.add('active');
+  });
+  document.getElementById('load-close').addEventListener('click', () => {
+    document.getElementById('modal-load').classList.remove('active');
+  });
+
+  // Memo
+  document.getElementById('btn-memo').addEventListener('click', () => {
+    document.getElementById('memo-text').textContent = buildMemo();
+    document.getElementById('modal-memo').classList.add('active');
+  });
+  document.getElementById('memo-close').addEventListener('click', () => {
+    document.getElementById('modal-memo').classList.remove('active');
+  });
+  document.getElementById('memo-copy').addEventListener('click', () => {
+    const txt = document.getElementById('memo-text').textContent;
+    navigator.clipboard.writeText(txt).then(() => {
+      showToast('クリップボードにコピーしました');
+    }).catch(() => {
+      // Fallback
+      const ta = document.createElement('textarea');
+      ta.value = txt;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+      showToast('コピーしました');
+    });
+  });
+
+  // Print
+  document.getElementById('btn-print').addEventListener('click', () => {
+    // Make sure all panels are rendered before printing
+    mirrorProjectToBizBlank();
+    renderTab2();
+    regenDevUnits();
+    renderTab3();
+    setTimeout(() => window.print(), 200);
+  });
+
+  // Export self-contained share HTML (for Slack)
+  document.getElementById('btn-export').addEventListener('click', () => {
+    exportShareHtml();
+  });
+
+  // PDF viewer close
+  const pdfViewer = document.getElementById('pdf-viewer');
+  document.getElementById('pdf-viewer-close').addEventListener('click', closePdfViewer);
+  pdfViewer.addEventListener('click', e => {
+    if (e.target === pdfViewer) closePdfViewer();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && pdfViewer.classList.contains('active')) closePdfViewer();
+  });
+
+  // Reset
+  document.getElementById('btn-reset').addEventListener('click', () => {
+    document.getElementById('modal-reset').classList.add('active');
+  });
+  document.getElementById('reset-cancel').addEventListener('click', () => {
+    document.getElementById('modal-reset').classList.remove('active');
+  });
+  document.getElementById('reset-confirm').addEventListener('click', () => {
+    state = defaultState();
+    persistCurrent();
+    switchTab(1);
+    renderTab1();
+    document.getElementById('modal-reset').classList.remove('active');
+    showToast('リセットしました');
+  });
+
+  // Close modals on backdrop click
+  document.querySelectorAll('.modal').forEach(m => {
+    m.addEventListener('click', e => {
+      if (e.target === m) m.classList.remove('active');
+    });
+  });
+}
+
+function renderSaveList(){
+  const list = document.getElementById('save-list');
+  const saves = getSaves();
+  if (!saves.length) {
+    list.innerHTML = '<div style="color:var(--muted); font-size:13px; text-align:center; padding:20px">保存済みデータはありません</div>';
+    return;
+  }
+  list.innerHTML = '';
+  saves.slice().reverse().forEach((s, ri) => {
+    const i = saves.length - 1 - ri;
+    const d = new Date(s.ts);
+    const dt = d.toLocaleString('ja-JP', {month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit'});
+    const row = document.createElement('div');
+    row.className = 'save-item';
+    row.innerHTML = `
+      <div><strong>${escAttr(s.name)}</strong><span class="meta">${dt}</span></div>
+      <div class="item-actions">
+        <button data-load="${i}">読込</button>
+        <button class="del" data-del="${i}">削除</button>
+      </div>
+    `;
+    list.appendChild(row);
+  });
+  list.querySelectorAll('[data-load]').forEach(b => {
+    b.addEventListener('click', e => {
+      const i = +e.target.dataset.load;
+      const saves = getSaves();
+      state = Object.assign(defaultState(), saves[i].data);
+      // Merge costs schema
+      const defCosts = defaultCosts();
+      for (const id in defCosts) {
+        if (!state.biz.costs[id]) state.biz.costs[id] = defCosts[id];
+      }
+      persistCurrent();
+      document.getElementById('modal-load').classList.remove('active');
+      switchTab(1);
+      renderTab1();
+      showToast('読み込みました：' + saves[i].name);
+    });
+  });
+  list.querySelectorAll('[data-del]').forEach(b => {
+    b.addEventListener('click', e => {
+      const i = +e.target.dataset.del;
+      const saves = getSaves();
+      if (!confirm('削除します：' + saves[i].name)) return;
+      saves.splice(i, 1);
+      setSaves(saves);
+      renderSaveList();
+    });
+  });
+}
+
+/* ════════════════════════════════════════════════
+ *  SECTION-LEVEL RESET
+ *  ヘッダー h2 のテキストから対応する state キーを判定して、
+ *  そのセクションだけを default 値に戻す
+ * ════════════════════════════════════════════════ */
+const SECTION_RESET_MAP = {
+  // Tab 1
+  '物件概要・立地': () => {
+    const d = defaultState();
+    state.project.name = d.project.name;
+    state.project.address = d.project.address;
+    state.project.lot = d.project.lot;
+    state.project.mapUrl = d.project.mapUrl;
+    state.project.stations = JSON.parse(JSON.stringify(d.project.stations));
+  },
+  '土地条件・法規制': () => {
+    const d = defaultState();
+    state.project.landArea = d.project.landArea;
+    state.project.rights = d.project.rights;
+    state.project.surveyStatus = d.project.surveyStatus;
+    state.project.priceTotal = d.project.priceTotal;
+    state.project.zoning = d.project.zoning;
+    state.project.coverage = d.project.coverage;
+    state.project.far = d.project.far;
+    state.project.road = d.project.road;
+    state.project.fire = d.project.fire;
+    state.project.otherReg = d.project.otherReg;
+    state.project.demolitionFlag = d.project.demolitionFlag;
+    state.project.demolitionCost = d.project.demolitionCost;
+    state.project.brokerBuyFlag = d.project.brokerBuyFlag;
+    state.project.notes = d.project.notes;
+  },
+  '想定プラン・建築費逆算': () => {
+    const d = defaultState();
+    state.plan = JSON.parse(JSON.stringify(d.plan));
+  },
+  '周辺賃料・成約事例': () => {
+    state.comps = [];
+    state.compPdfs = [];
+  },
+  // Tab 2
+  '計画ヘッダ': () => {
+    const d = defaultState();
+    const keepCosts = state.biz.costs;
+    Object.assign(state.biz, {
+      title:'', staffBuy:'', staffSell:'',
+      address:'', brokerBuy:'', brokerSell:'',
+      landAreaM2:0, structure:'壁式RC造', usage:'共同住宅',
+      floors:'', units:'', zoning:'', coverage:80, far:500,
+      dateContractBuy:'', dateSettleBuy:'',
+      dateContractSell:'', dateSettleSell:''
+    });
+    state.biz.costs = keepCosts;
+  },
+  '評価額・固都税': () => {
+    state.biz.landTaxEval = 0;
+    state.biz.bldgTaxEvalBuy = 0;
+    state.biz.bldgFloorArea = 0;
+  },
+  '収支概要': () => {
+    state.biz.annualIncome = 0;
+    state.biz.landBuyPrice = 0;
+    state.biz.buildCost = 0;
+    state.biz.landLoan = 0;
+    state.biz.buildLoan = 0;
+    state.biz.salePriceHigh = 0;
+    state.biz.salePriceLow = 0;
+  },
+  '土地仕入 諸費用': () => {
+    const def = defaultCosts();
+    for (const id in state.biz.costs) {
+      if (def[id] && def[id].group && COST_GROUPS[def[id].group] && COST_GROUP_ORDER.land.includes(def[id].group)) {
+        state.biz.costs[id] = JSON.parse(JSON.stringify(def[id]));
+      }
+    }
+  },
+  '建築 諸費用': () => {
+    const def = defaultCosts();
+    for (const id in state.biz.costs) {
+      if (def[id] && def[id].group && COST_GROUPS[def[id].group] && COST_GROUP_ORDER.build.includes(def[id].group)) {
+        state.biz.costs[id] = JSON.parse(JSON.stringify(def[id]));
+      }
+    }
+  },
+  '売却 諸費用': () => {
+    const def = defaultCosts();
+    for (const id in state.biz.costs) {
+      if (def[id] && def[id].group && COST_GROUPS[def[id].group] && COST_GROUP_ORDER.sell.includes(def[id].group)) {
+        state.biz.costs[id] = JSON.parse(JSON.stringify(def[id]));
+      }
+    }
+  },
+  // Tab 3
+  '部屋別 賃料計画': () => { state.dev.units = []; },
+  '運営費・NOI': () => {
+    state.dev.vacancy = 5;
+    state.dev.repair = 200000;
+  }
+};
+
+function resetSection(sec){
+  const head = sec.querySelector('.section-head h2');
+  if (!head) return;
+  const title = head.textContent.trim();
+  const resetter = SECTION_RESET_MAP[title];
+  if (!resetter) {
+    showToast('このセクションはリセット対象外です');
+    return;
+  }
+  if (!confirm(`「${title}」の入力をリセットしますか？\n（このセクションの項目のみ初期値に戻ります）`)) return;
+  resetter();
+  persistCurrent();
+  // Re-render the active tab
+  const activePanel = document.querySelector('.panel.active');
+  const tabNum = activePanel ? activePanel.dataset.panel : '1';
+  if (tabNum === '2') renderTab2();
+  else if (tabNum === '3') { regenDevUnits(); renderTab3(); }
+  else renderTab1();
+  showToast(`「${title}」をリセットしました`);
+}
+
+function injectCollapseButtons(){
+  document.querySelectorAll('.section').forEach((sec, idx) => {
+    const head = sec.querySelector('.section-head');
+    if (!head) return;
+    // Section actions wrapper (right side)
+    let actions = head.querySelector('.section-actions');
+    if (!actions) {
+      actions = document.createElement('div');
+      actions.className = 'section-actions';
+      head.appendChild(actions);
+
+      // Reset button — only show if this section has a reset handler
+      const h2 = head.querySelector('h2');
+      const title = h2 ? h2.textContent.trim() : '';
+      if (SECTION_RESET_MAP[title]) {
+        const resetBtn = document.createElement('button');
+        resetBtn.className = 'section-reset-btn';
+        resetBtn.type = 'button';
+        resetBtn.title = 'この項目をリセット';
+        resetBtn.setAttribute('aria-label', 'リセット');
+        resetBtn.innerHTML = '↺';
+        resetBtn.addEventListener('click', e => {
+          e.stopPropagation();
+          resetSection(sec);
+        });
+        actions.appendChild(resetBtn);
+      }
+
+      // Collapse button
+      const btn = document.createElement('button');
+      btn.className = 'collapse-btn';
+      btn.type = 'button';
+      btn.setAttribute('aria-label', '折りたたみ');
+      btn.title = '折りたたみ';
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        sec.classList.toggle('collapsed');
+      });
+      actions.appendChild(btn);
+    }
+  });
+}
+
+/* ════════════════════════════════════════════════
+ *  EXPORT / SHARE — Self-contained single HTML
+ * ════════════════════════════════════════════════ */
+/* ════════════════════════════════════════════════
+ *  SERIALIZE: write current input.value (property) into
+ *  HTML attributes so outerHTML reflects user's input.
+ *  Otherwise, the browser only captures the *initial*
+ *  attributes when you read outerHTML.
+ * ════════════════════════════════════════════════ */
+function serializeFormValuesToAttributes(){
+  document.querySelectorAll('input').forEach(inp => {
+    const type = (inp.type || '').toLowerCase();
+    if (type === 'checkbox' || type === 'radio') {
+      if (inp.checked) inp.setAttribute('checked', 'checked');
+      else inp.removeAttribute('checked');
+    } else if (type === 'file') {
+      // can't serialize file inputs; skip
+    } else {
+      // text, number, date, hidden, etc.
+      inp.setAttribute('value', inp.value);
+    }
+  });
+  document.querySelectorAll('textarea').forEach(t => {
+    // textContent → outerHTML serialization for <textarea>
+    t.textContent = t.value;
+  });
+  document.querySelectorAll('select').forEach(sel => {
+    Array.from(sel.options).forEach(opt => {
+      if (opt.selected) opt.setAttribute('selected', 'selected');
+      else opt.removeAttribute('selected');
+    });
+  });
+}
+
+function exportShareHtml(){
+  try {
+    // 0. Render ALL tabs so every DOM element exists and is populated.
+    //    Otherwise outerHTML only captures tab 1 (the others are unrendered).
+    mirrorProjectToBizBlank();
+    renderTab1();
+    renderTab2();
+    regenDevUnits();
+    renderTab3();
+    syncInputsFromState();
+
+    // 0.5. Force-write every form-field's CURRENT value into the corresponding HTML
+    //      attribute. Without this, outerHTML serializes only the *initial* attributes,
+    //      so user-typed values are lost. (Spec-compliant DOM behavior.)
+    document.querySelectorAll('input').forEach(el => {
+      if(el.type==='checkbox' || el.type==='radio') {
+        if(el.checked) el.setAttribute('checked', 'checked');
+        else el.removeAttribute('checked');
+      } else {
+        el.setAttribute('value', el.value);
+      }
+    });
+    document.querySelectorAll('textarea').forEach(el => {
+      el.textContent = el.value;
+    });
+    document.querySelectorAll('select').forEach(el => {
+      Array.from(el.options).forEach(opt => {
+        if(opt.selected) opt.setAttribute('selected', 'selected');
+        else opt.removeAttribute('selected');
+      });
+    });
+
+    // 0.6. If a previous embed exists in THIS DOM (we're re-exporting a shared file),
+    //      remove it via DOM API. CRITICAL: do NOT use a regex on outerHTML for this —
+    //      a regex would match the literal "<script id=__embedded_state__>" string
+    //      that appears inside this very function's source code and gobble the whole
+    //      main script up to its closing tag, producing a broken export.
+    const oldEmbed = document.getElementById('__embedded_state__');
+    if (oldEmbed && oldEmbed.parentNode) oldEmbed.parentNode.removeChild(oldEmbed);
+
+    // 1. Get the current page HTML (now containing every input's actual value)
+    const doctype = '<!DOCTYPE html>\n';
+    const html = document.documentElement.outerHTML;
+
+    // 2. Serialize the current state (for the report-mode renderer to use)
+    const stateJson = JSON.stringify(state);
+
+    // 3. Build a script tag that pre-populates EMBEDDED_STATE before the main script runs.
+    //    We escape the closing-script sequence inside the JSON-of-JSON so the inner string
+    //    can never contain a literal tag-closer that would terminate the embed tag early.
+    const safeStateLiteral = JSON.stringify(stateJson).replace(/<\/(script)/gi, '<\\/$1');
+    const embedTag =
+      '<' + 'script id="__embedded_state__">window.EMBEDDED_STATE=' +
+      safeStateLiteral +
+      ';window.IS_SHARED_HTML=true;<' + '/script>';
+
+    // 4. Insert the embed tag right after <head>'s opening tag
+    const out = doctype + html.replace(/<head[^>]*>/i, m => m + '\n' + embedTag);
+
+    // 5. Generate filename from project name
+    const safeName = (state.project.name || state.biz.title || '物件投資シミュレーション')
+      .replace(/[\/\\?%*:|"<>]/g, '_')
+      .slice(0, 60);
+    const today = new Date().toISOString().slice(0,10);
+    const filename = `${safeName}_${today}.html`;
+
+    // 6. Trigger download
+    const blob = new Blob([out], {type: 'text/html;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 300);
+
+    showToast('共有HTMLを書き出しました：' + filename);
+  } catch (e) {
+    console.error(e);
+    alert('書き出しに失敗しました：' + e.message);
+  }
+}
+
+function applySharedReadonlyMode(){
+  // 1. Lock UI via CSS class
+  document.body.classList.add('shared-readonly');
+
+  // 2. Hard-disable every form control (CSS pointer-events is supplemented with attribute)
+  document.querySelectorAll('input, textarea, select').forEach(el => {
+    // PDF viewer download link is an <a>, not affected.
+    el.setAttribute('readonly', 'readonly');
+    el.setAttribute('disabled', 'disabled');
+    // For selects: setting disabled hides the dropdown UI
+    if (el.tagName === 'SELECT') el.setAttribute('aria-disabled', 'true');
+  });
+
+  // 3. Block all keystrokes inside form fields (defense in depth — readonly already
+  //    blocks them but ensures contenteditable-like elements stay locked)
+  document.addEventListener('keydown', e => {
+    const t = e.target;
+    if (!t) return;
+    const tag = t.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+      // allow tab/escape for navigation, block typing keys
+      if (e.key !== 'Tab' && e.key !== 'Escape' && e.key !== 'Enter') {
+        e.preventDefault();
+      }
+    }
+  }, true);
+
+  // 4. Stop bindStateInputs handlers from mutating state on programmatic events
+  //    (already handled because inputs are readonly, but be explicit)
+  document.body.addEventListener('input', e => {
+    e.stopImmediatePropagation();
+  }, true);
+
+  // 5. Hide buttons that don't make sense in view-only mode
+  ['btn-sample','btn-save','btn-load','btn-reset','btn-export'].forEach(id => {
+    const b = document.getElementById(id);
+    if (b) b.style.display = 'none';
+  });
+}
+
+/* ════════════════════════════════════════════════
+ *  REPORT MODE
+ *  Single-page scrollable view of all tabs for shared HTML.
+ *  Inserts STEP headers between panels and shows all panels at once.
+ * ════════════════════════════════════════════════ */
+function enableReportMode(){
+  document.body.classList.add('report-mode');
+
+  // Show every panel (the active-class rule no longer matters in this mode)
+  const panels = document.querySelectorAll('.panel');
+  panels.forEach(p => p.classList.add('active'));
+
+  // Insert a step header before each panel
+  const stepLabels = {
+    '1': { num: 'STEP 01', title: '仕入れ検討', sub: 'Acquisition Review' },
+    '2': { num: 'STEP 02', title: '事業計画', sub: 'Business Plan' },
+    '3': { num: 'STEP 03', title: '企画開発', sub: 'Development Planning' }
+  };
+  panels.forEach(p => {
+    const n = p.dataset.panel;
+    const meta = stepLabels[n];
+    if (!meta) return;
+    if (p.previousElementSibling && p.previousElementSibling.classList && p.previousElementSibling.classList.contains('report-step-head')) return;
+    const head = document.createElement('div');
+    head.className = 'report-step-head';
+    head.innerHTML = `
+      <div class="report-step-num">${meta.num}</div>
+      <h2 class="report-step-title">${meta.title}</h2>
+      <div class="report-step-sub">${meta.sub}</div>
+    `;
+    p.parentNode.insertBefore(head, p);
+  });
+
+  // Expand all collapsed sections so nothing is hidden in the report
+  document.querySelectorAll('.section.collapsed').forEach(s => s.classList.remove('collapsed'));
+}
+
+function init(){
+  // PRIORITY 1: embedded state (from a shared HTML file) — overrides localStorage
+  if (typeof window.EMBEDDED_STATE === 'string') {
+    try {
+      const def = defaultState();
+      const obj = JSON.parse(window.EMBEDDED_STATE);
+      state = {
+        project: Object.assign({}, def.project, obj.project || {}),
+        plan:    Object.assign({}, def.plan, obj.plan || {}),
+        comps:   Array.isArray(obj.comps) ? obj.comps : def.comps,
+        compPdfs: Array.isArray(obj.compPdfs) ? obj.compPdfs : def.compPdfs,
+        biz:     Object.assign({}, def.biz, obj.biz || {}),
+        dev:     Object.assign({}, def.dev, obj.dev || {})
+      };
+      state.project.rights = '所有権';
+      if (!state.plan.structure) state.plan.structure = '壁式RC造';
+      if (!state.biz.structure) state.biz.structure = '壁式RC造';
+      const defCosts = defaultCosts();
+      state.biz.costs = state.biz.costs || {};
+      for (const id in defCosts) {
+        if (state.biz.costs[id]) state.biz.costs[id] = Object.assign({}, defCosts[id], state.biz.costs[id]);
+        else state.biz.costs[id] = defCosts[id];
+      }
+    } catch(e) {
+      console.error('Embedded state load failed:', e);
+      loadCurrent();
+    }
+  } else {
+    // PRIORITY 2: localStorage
+    if (!loadCurrent()) {
+      // first visit: leave default empty state
+    }
+  }
+  wireUp();
+  injectCollapseButtons();
+  renderTab1();
+
+  // If this is a shared HTML, force a full render of every tab + sync,
+  // then switch to report layout, then lock down editing.
+  if (window.IS_SHARED_HTML) {
+    // Render EVERY tab so all DOM fields exist and are populated with state.
+    mirrorProjectToBizBlank();
+    regenDevUnits();
+    renderTab1();
+    renderTab2();
+    renderTab3();
+    syncInputsFromState();
+    // Switch to single-page report layout
+    enableReportMode();
+    // Then apply read-only lock and banner
+    showSharedBanner();
+    applySharedReadonlyMode();
+  }
+}
+
+function showSharedBanner(){
+  const banner = document.createElement('div');
+  banner.className = 'shared-banner';
+  const projectName = state.project.name || state.biz.title || '案件投資シミュレーション';
+  banner.innerHTML = `
+    <div class="shared-banner-inner">
+      <span class="shared-tag">VIEW ONLY</span>
+      <span class="shared-msg">共有版（閲覧専用）：<b>${escAttr(projectName)}</b> — このファイルは閲覧用です。数値の編集はできません。印刷・メモコピーは可能です。</span>
+      <button class="shared-dismiss" type="button" title="閉じる">×</button>
+    </div>
+  `;
+  document.body.insertBefore(banner, document.body.firstChild);
+  banner.querySelector('.shared-dismiss').addEventListener('click', () => banner.remove());
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
