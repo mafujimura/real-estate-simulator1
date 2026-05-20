@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -203,16 +204,19 @@
   @media print{
     body.report-mode .report-step-head{
       page-break-before:always;
-      background:#fff !important;
-      color:var(--ink) !important;
-      border:1px solid #999 !important;
-      border-left:4px solid var(--accent) !important;
+      background:linear-gradient(135deg, #2f3e3a 0%, #1f2b27 100%) !important;
+      color:#f4f1ec !important;
+      border:0 !important;
+      border-left:4px solid #b8543e !important;
       box-shadow:none !important;
     }
     body.report-mode .report-step-head:first-of-type{ page-break-before:auto }
-    body.report-mode .report-step-num{ color:var(--accent) !important }
-    body.report-mode .report-step-sub{ color:var(--muted) !important }
+    body.report-mode .report-step-num{ color:#b8543e !important }
+    body.report-mode .report-step-title{ color:#f4f1ec !important }
+    body.report-mode .report-step-sub{ color:rgba(244,241,236,0.55) !important }
     body.report-mode .panel{ page-break-after:auto }
+    /* In report mode the panel::before STEP banner is redundant — hide it */
+    body.report-mode .panel::before{ display:none !important }
     body.report-mode .section{ page-break-inside:avoid }
     body.report-mode .shared-banner{display:none !important}
   }
@@ -596,6 +600,8 @@
     margin-top:6px; font-weight:500;
   }
   .map-link:hover{text-decoration:underline}
+  /* Print-only elements hidden on screen */
+  .map-print-fallback, .map-print-address{ display:none }
 
   /* ────────────── DYNAMIC LISTS ────────────── */
   .dyn-list{display:flex; flex-direction:column; gap:6px}
@@ -1180,21 +1186,381 @@
   }
   .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
 
-  /* ────────────── PRINT ────────────── */
+  /* ────────────── SETTLEMENT TAB (STEP04) ────────────── */
+  .settle-check-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(180px, 1fr));
+    gap:6px 12px;
+    padding:8px 12px;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+  }
+  .settle-check{
+    display:flex; align-items:center; gap:6px;
+    font-size:12px; color:var(--ink-2);
+    cursor:pointer;
+    user-select:none;
+  }
+  .settle-check input[type="checkbox"]{
+    width:14px; height:14px;
+    cursor:pointer;
+    accent-color:var(--accent);
+  }
+  .settle-check:hover{color:var(--ink)}
+  .settle-table{
+    width:100%; border-collapse:collapse;
+    font-size:13px;
+  }
+  .settle-table td{
+    padding:7px 10px;
+    border-bottom:1px dotted var(--border);
+  }
+  .settle-table td:first-child{
+    width:auto;
+  }
+  .settle-table td.num{
+    width:160px; text-align:right;
+    font-family:var(--mono); font-feature-settings:"tnum";
+  }
+  .settle-table td.num-unit{
+    width:30px; color:var(--muted); font-size:11px;
+  }
+  .settle-table tr.settle-total-row td{
+    border-top:1px solid var(--border-strong);
+    border-bottom:0;
+    background:var(--surface-2);
+    font-family:var(--display);
+    font-weight:600; font-size:14px;
+    padding:10px;
+  }
+  .settle-table tr.settle-cash-row td{
+    background:linear-gradient(90deg, rgba(184,84,62,0.10), rgba(184,84,62,0.04));
+    border-top:1px solid var(--accent);
+    font-family:var(--display);
+    font-weight:600; font-size:15px;
+    color:var(--accent);
+    padding:11px 10px;
+  }
+  .settle-table tr.settle-cash-row td.num{
+    color:var(--accent);
+    font-size:16px;
+  }
+  .settle-acct{
+    display:inline-block;
+    font-family:var(--body); font-size:11px;
+    color:var(--muted);
+    background:var(--surface-2);
+    padding:2px 8px;
+    border-radius:99px;
+    margin-left:6px;
+    border:1px dashed transparent;
+    cursor:text;
+  }
+  .settle-acct:hover{border-color:var(--accent-3)}
+  .settle-acct:focus{
+    outline:none; border-color:var(--accent);
+    background:var(--surface);
+  }
+  .input.inline-cell{
+    border:1px solid transparent;
+    background:transparent;
+    padding:3px 6px;
+    width:100%;
+  }
+  .input.inline-cell:hover{border-color:var(--border)}
+  .input.inline-cell:focus{
+    outline:none; border-color:var(--ink);
+    background:var(--surface);
+  }
+  .input.num.inline-cell{ text-align:right }
+
+
   @media print{
-    body{background:#fff; font-size:11px}
-    .topbar, .tabs, .dyn-add, .actions, .modal, .section-actions{display:none !important}
-    main{padding:0; max-width:none}
+    /* Force browsers to print background colors so our design palette shows */
+    *{
+      -webkit-print-color-adjust:exact !important;
+      print-color-adjust:exact !important;
+      color-adjust:exact !important;
+    }
+    @page{ margin:12mm; size:A4 }
+
+    body{
+      background:#f4f1ec;
+      font-size:11px;
+      color:#1a1a1a;
+    }
+    /* Hide UI chrome that has no role in print */
+    .topbar, .tabs, .dyn-add, .actions, .modal, .section-actions, .print-menu{display:none !important}
+    main{padding:8px 0 0; max-width:none}
     .panel{display:block !important; page-break-after:always}
     .panel:last-child{page-break-after:auto}
-    .section{box-shadow:none; border:1px solid #999; margin-bottom:14px; break-inside:avoid}
-    .map-wrap{display:none}
-    .kpi-grid, .scenario-grid{break-inside:avoid}
-    .cost-row .param{display:block}
-    .field-label-edit, .cost-row .lbl input, .input{
-      border:0 !important; background:transparent !important; box-shadow:none !important;
+
+    /* Page header strip inserted at the top of each printed STEP */
+    .panel::before{
+      content:attr(data-print-title);
+      display:block;
+      font-family:'Shippori Mincho','Noto Sans JP',serif;
+      font-size:16px; font-weight:600;
+      color:#f4f1ec;
+      background:linear-gradient(135deg, #2f3e3a 0%, #1f2b27 100%);
+      border-left:4px solid #b8543e;
+      padding:9px 16px;
+      letter-spacing:0.05em;
+      margin:0 0 14px 0;
+      border-radius:4px;
     }
+
+    /* Section cards retain their warm-cream + border look */
+    .section{
+      background:#fdfcfa !important;
+      border:1px solid #d6cfc1 !important;
+      box-shadow:none !important;
+      margin-bottom:10px;
+      break-inside:avoid;
+      border-radius:4px;
+      overflow:visible;
+    }
+    /* Section heading with subtle ribbon line */
+    .section-head{
+      background:#f0ebe1 !important;
+      border-bottom:1px solid #d6cfc1 !important;
+      padding:7px 14px !important;
+    }
+    .section-head h2{
+      color:#2f3e3a !important;
+      font-size:13px !important;
+    }
+    .section-head .ribbon{
+      color:#b8543e !important;
+      font-size:9px !important;
+    }
+    .section-head .desc{
+      color:#6b6b6b !important;
+      font-size:10.5px !important;
+    }
+    .section-body{ padding:10px 14px 12px !important }
+
+    /* Map: show in print at a compact size so the location is visible */
+    .map-wrap{
+      display:block !important;
+      height:130px !important;
+      border:1px solid #d6cfc1 !important;
+      background:#f0ebe1 !important;
+      page-break-inside:avoid;
+      overflow:hidden;
+      position:relative;
+    }
+    .map-wrap iframe{
+      width:100% !important; height:100% !important;
+      border:0 !important;
+      filter:saturate(0.85) contrast(1.05);
+    }
+    /* If iframe can't render in print (some browsers / offline), show address fallback */
+    .map-print-fallback{
+      display:flex !important;
+      position:absolute; inset:0;
+      align-items:center; justify-content:center;
+      flex-direction:column;
+      padding:10px; text-align:center;
+      background:#f0ebe1;
+      color:#2f3e3a;
+      font-size:11px; line-height:1.5;
+      z-index:0;
+    }
+    .map-wrap iframe{ position:relative; z-index:1; background:transparent !important }
+    .map-print-fallback .mpf-pin{
+      font-size:18px; color:#b8543e; margin-bottom:3px;
+    }
+    .map-print-fallback .mpf-addr{
+      font-family:'Shippori Mincho', serif;
+      font-size:12px; font-weight:600;
+      color:#1a1a1a;
+    }
+    .map-print-fallback .mpf-url{
+      font-family:'JetBrains Mono', monospace;
+      font-size:9px; color:#6b6b6b;
+      margin-top:3px; word-break:break-all;
+    }
+    /* Print-only address line BELOW the map (always shown as a backup) */
+    .map-print-address{
+      display:block !important;
+      font-family:'JetBrains Mono', monospace;
+      font-size:10px;
+      color:#2f3e3a;
+      padding:3px 6px;
+      margin-top:3px;
+      border-left:2px solid #b8543e;
+      background:#f0ebe1;
+    }
+    /* KPI cards: preserve the dark accent KPI */
+    .kpi-grid, .scenario-grid, .scenario-card{ break-inside:avoid }
+    .kpi{
+      background:#fdfcfa !important;
+      border:1px solid #d6cfc1 !important;
+    }
+    .kpi.dark{
+      background:#2f3e3a !important;
+      color:#f4f1ec !important;
+      border-color:#2f3e3a !important;
+    }
+    .kpi.dark .k-label,
+    .kpi.dark .k-sub{ color:rgba(244,241,236,0.75) !important }
+    .kpi .k-value{
+      color:#1a1a1a !important;
+    }
+    .kpi.dark .k-value{
+      color:#f4f1ec !important;
+    }
+
+    /* Cost rows: show parameter columns in print */
+    .cost-row .param{display:block}
+    .cost-row{ border-bottom:1px dotted #c8c0b0 !important }
+    .cost-subtotal{
+      background:#f0ebe1 !important;
+      border-top:1px solid #2f3e3a !important;
+      padding:6px 8px !important;
+    }
+    .cost-group-title{ color:#2f3e3a !important; border-bottom:1px solid #d6cfc1 !important }
+
+    /* Inputs flatten to plain text but keep value color */
+    .field-label-edit, .cost-row .lbl input, .input, .textarea, select.input{
+      border:0 !important;
+      background:transparent !important;
+      box-shadow:none !important;
+      color:#1a1a1a !important;
+      -webkit-text-fill-color:#1a1a1a !important;
+      padding:1px 2px !important;
+      font-size:11px !important;
+    }
+    .input.readonly{ color:#1a1a1a !important }
+    .input.num{ font-family:'JetBrains Mono', monospace }
+
+    /* Exit strategy cards (Tab1) */
+    .exit-toggle{ display:none !important }
+    .exit-panel.active{
+      display:block !important;
+      background:#fdfcfa !important;
+      border:1px solid #d6cfc1 !important;
+    }
+    .strategy-note{
+      background:#f0ebe1 !important;
+      border-left:3px solid #2f3e3a !important;
+    }
+
+    /* Jourei box */
+    .jourei-box{
+      background:#fdfcfa !important;
+      border:1px solid #d6cfc1 !important;
+    }
+    .jourei-item{
+      background:#f0ebe1 !important;
+      border-left:3px solid #2f3e3a !important;
+    }
+    .jourei-applies.danger{ background:rgba(184,84,62,0.12) !important; border-left:3px solid #b8543e !important }
+    .jourei-applies.safe{ background:rgba(34,139,84,0.10) !important; border-left:3px solid #228b54 !important }
+
+    /* Sensitivity table */
+    .sens-table th{ background:#f0ebe1 !important; color:#6b6b6b !important }
+    .sens-table th.corner{ background:#2f3e3a !important; color:#fff !important }
+    .sens-table td.good{ background:rgba(47,111,79,0.10) !important }
+    .sens-table td.bad{ background:rgba(167,58,42,0.10) !important }
+
+    /* Settlement table (STEP04) */
+    .settle-table tr.settle-total-row td{
+      background:#f0ebe1 !important;
+      border-top:1px solid #2f3e3a !important;
+    }
+    .settle-table tr.settle-cash-row td{
+      background:linear-gradient(90deg, rgba(184,84,62,0.18), rgba(184,84,62,0.06)) !important;
+      border-top:1px solid #b8543e !important;
+      color:#b8543e !important;
+    }
+    .settle-table tr.settle-cash-row td.num{ color:#b8543e !important }
+    .settle-check-grid{ background:#f0ebe1 !important; border:1px solid #d6cfc1 !important }
+
+    /* Unit table */
+    .unit-table th{ background:#f0ebe1 !important; color:#6b6b6b !important }
+    .unit-table tfoot td{ background:#f0ebe1 !important; border-top:1px solid #2f3e3a !important }
+
+    /* Dynamic list rows (stations, comps, free-items, transfers) */
+    .dyn-row{
+      background:#fdfcfa !important;
+      border:1px solid #d6cfc1 !important;
+    }
+    .rm{ display:none !important }
+
+    /* Field hints */
+    .hint{ color:#6b6b6b !important }
+    .hint.derived{ color:#2f3e3a !important }
+
+    /* PDF attachment list — render as gallery in print */
+    .pdf-list{
+      display:grid !important;
+      grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)) !important;
+      gap:6px !important;
+    }
+    .pdf-item{
+      flex-direction:column !important;
+      align-items:stretch !important;
+      padding:0 !important;
+      overflow:hidden !important;
+      background:#fdfcfa !important;
+      border:1px solid #d6cfc1 !important;
+    }
+    .pdf-item .pdf-icon-sm{
+      width:100% !important; height:90px !important;
+      border-radius:0 !important;
+      font-size:13px !important;
+    }
+    .pdf-item .pdf-name,
+    .pdf-item .pdf-size{
+      padding:3px 8px !important;
+      font-size:9.5px !important;
+    }
+    .pdf-item .pdf-name{ white-space:normal !important; line-height:1.3 !important }
+    .pdf-item .pdf-open,
+    .pdf-item .pdf-remove{ display:none !important }
+    .pdf-upload-btn{ display:none !important }
+
+    /* Scoped print: when body has print-scope-N class, only show panel N */
+    body.print-scope-1 .panel:not([data-panel="1"]){display:none !important}
+    body.print-scope-2 .panel:not([data-panel="2"]){display:none !important}
+    body.print-scope-3 .panel:not([data-panel="3"]){display:none !important}
+    body.print-scope-4 .panel:not([data-panel="4"]){display:none !important}
   }
+
+  /* ────────────── PRINT DROPDOWN MENU ────────────── */
+  .print-menu{position:relative; display:inline-block}
+  .print-menu-list{
+    position:absolute; right:0; top:calc(100% + 4px);
+    background:var(--surface);
+    border:1px solid var(--border-strong);
+    border-radius:var(--radius-sm);
+    box-shadow:0 8px 24px rgba(0,0,0,0.12);
+    min-width:200px;
+    z-index:50;
+    display:none;
+    overflow:hidden;
+  }
+  .print-menu.open .print-menu-list{display:block}
+  .print-menu-item{
+    display:block; width:100%; text-align:left;
+    padding:9px 14px;
+    background:transparent; border:0;
+    font-family:var(--body); font-size:12.5px;
+    color:var(--ink); cursor:pointer;
+    border-bottom:1px solid var(--border);
+    transition:all 0.12s;
+  }
+  .print-menu-item:last-child{border-bottom:0}
+  .print-menu-item:hover{background:var(--ink); color:var(--surface)}
+  .print-menu-item .pm-step{
+    font-family:var(--mono); font-size:9.5px;
+    letter-spacing:0.14em; color:var(--soft);
+    display:block; margin-bottom:1px;
+  }
+  .print-menu-item:hover .pm-step{color:rgba(244,241,236,0.7)}
 </style>
 </head>
 <body>
@@ -1227,10 +1593,29 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
         共有HTML
       </button>
-      <button class="btn" id="btn-print">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-        印刷
-      </button>
+      <div class="print-menu" id="print-menu">
+        <button class="btn" id="btn-print">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          印刷 ▾
+        </button>
+        <div class="print-menu-list">
+          <button class="print-menu-item" data-print-scope="1">
+            <span class="pm-step">STEP 01</span>仕入れ検討のみ
+          </button>
+          <button class="print-menu-item" data-print-scope="2">
+            <span class="pm-step">STEP 02</span>事業計画のみ
+          </button>
+          <button class="print-menu-item" data-print-scope="3">
+            <span class="pm-step">STEP 03</span>企画開発のみ
+          </button>
+          <button class="print-menu-item" data-print-scope="4">
+            <span class="pm-step">STEP 04</span>決済明細書のみ
+          </button>
+          <button class="print-menu-item" data-print-scope="all">
+            <span class="pm-step">ALL</span>全体（全タブ）
+          </button>
+        </div>
+      </div>
       <button class="btn warn" id="btn-reset">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
         リセット
@@ -1241,6 +1626,7 @@
     <button class="tab active" data-tab="1"><span class="step">STEP 01</span>仕入れ検討</button>
     <button class="tab" data-tab="2"><span class="step">STEP 02</span>事業計画</button>
     <button class="tab" data-tab="3"><span class="step">STEP 03</span>企画開発</button>
+    <button class="tab" data-tab="4"><span class="step">STEP 04</span>決済明細書</button>
   </nav>
 </header>
 
@@ -1249,7 +1635,7 @@
 <!-- ════════════════════════════════════════════════ -->
 <!-- ════════════════ TAB 1: 仕入れ検討 ════════════════ -->
 <!-- ════════════════════════════════════════════════ -->
-<section class="panel active" data-panel="1">
+<section class="panel active" data-panel="1" data-print-title="STEP 01 ─── 仕入れ検討">
 
   <div class="flow-note">
     <span class="label">STEP 01</span>
@@ -1408,6 +1794,16 @@
             <span class="unit">円</span>
           </div>
           <div class="hint derived" id="hint-demolition">— 万円</div>
+        </div>
+
+        <div class="field col-span-2 col-span-full">
+          <label style="display:flex; align-items:center; gap:8px">
+            <span>項目フリースペース（粗利からマイナス計上）</span>
+            <span class="hint" style="margin-top:0">— 立ち退き料・測量費・補修費等</span>
+          </label>
+          <div class="dyn-list" id="free-items-list"></div>
+          <button class="dyn-add" id="add-free-item">+ 項目を追加</button>
+          <div class="hint derived" id="hint-free-items-total" style="margin-top:6px; text-align:right; font-weight:500">合計：— 円</div>
         </div>
 
         <div class="field">
@@ -1708,7 +2104,7 @@
 <!-- ════════════════════════════════════════════════ -->
 <!-- ════════════════ TAB 2: 事業計画 ════════════════ -->
 <!-- ════════════════════════════════════════════════ -->
-<section class="panel" data-panel="2">
+<section class="panel" data-panel="2" data-print-title="STEP 02 ─── 事業計画">
 
   <div class="flow-note">
     <span class="label">STEP 02</span>
@@ -2006,7 +2402,7 @@
 <!-- ════════════════════════════════════════════════ -->
 <!-- ════════════════ TAB 3: 企画開発 ════════════════ -->
 <!-- ════════════════════════════════════════════════ -->
-<section class="panel" data-panel="3">
+<section class="panel" data-panel="3" data-print-title="STEP 03 ─── 企画開発">
 
   <div class="flow-note">
     <span class="label">STEP 03</span>
@@ -2126,6 +2522,261 @@
 
 </section>
 
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- ─────────── PANEL 4: 決済明細書 ─────────── -->
+<!-- ════════════════════════════════════════════════ -->
+<section class="panel" data-panel="4" data-print-title="STEP 04 ─── 決済明細書">
+
+  <!-- ─────────── ヘッダ情報 ─────────── -->
+  <div class="section">
+    <div class="section-head">
+      <h2>決済明細書 — 仕入</h2>
+      <span class="desc">仕入決済時の支払明細・必要現金算出</span>
+      <span class="ribbon">SETTLEMENT STATEMENT</span>
+    </div>
+    <div class="section-body">
+
+      <div class="grid cols-3">
+        <div class="field">
+          <label>物件名</label>
+          <input class="input" data-k="settle.propertyName" placeholder="例：神田和泉町土地" />
+        </div>
+        <div class="field">
+          <label>借入金融機関名</label>
+          <input class="input" data-k="settle.bank" placeholder="例：八千信用組合" />
+        </div>
+        <div class="field">
+          <label>決済日（引渡日）</label>
+          <input class="input" type="date" data-k="settle.settleDate" />
+        </div>
+        <div class="field">
+          <label>決済時間</label>
+          <input class="input" data-k="settle.settleTime" placeholder="例：10:30" />
+        </div>
+        <div class="field col-span-2">
+          <label>決済場所</label>
+          <input class="input" data-k="settle.settleVenue" placeholder="例：住友不動産ステップ 上野営業センター" />
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="field" style="margin-bottom:10px">
+        <label style="font-size:12px; font-weight:600; color:var(--accent-2); letter-spacing:0.04em">必要書類チェック</label>
+      </div>
+      <div class="settle-check-grid">
+        <label class="settle-check"><input type="checkbox" data-k="settle.chk_passbook" data-type="bool" /><span>通帳</span></label>
+        <label class="settle-check"><input type="checkbox" data-k="settle.chk_seal" data-type="bool" /><span>印鑑</span></label>
+        <label class="settle-check"><input type="checkbox" data-k="settle.chk_cashSlip" data-type="bool" /><span>残金 伝票</span></label>
+        <label class="settle-check"><input type="checkbox" data-k="settle.chk_settleSlip" data-type="bool" /><span>清算金 伝票</span></label>
+        <label class="settle-check"><input type="checkbox" data-k="settle.chk_regCost" data-type="bool" /><span>登記費用</span></label>
+        <label class="settle-check"><input type="checkbox" data-k="settle.chk_broker" data-type="bool" /><span>仲介手数料</span></label>
+        <label class="settle-check"><input type="checkbox" data-k="settle.chk_misc" data-type="bool" /><span>その他 伝票or現金</span></label>
+        <label class="settle-check"><input type="checkbox" data-k="settle.chk_regCert" data-type="bool" /><span>登記委任状等</span></label>
+        <label class="settle-check"><input type="checkbox" data-k="settle.chk_sealCert" data-type="bool" /><span>印鑑証明書（原本）</span></label>
+        <label class="settle-check"><input type="checkbox" data-k="settle.chk_evalCert" data-type="bool" /><span>評価証明書（原本）</span></label>
+        <label class="settle-check"><input type="checkbox" data-k="settle.chk_dealConfirm" data-type="bool" /><span>取引完了確認書</span></label>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────── 固都税清算金明細 ─────────── -->
+  <div class="section">
+    <div class="section-head">
+      <h2>固都税清算金明細</h2>
+      <span class="ribbon">PRORATION</span>
+    </div>
+    <div class="section-body">
+
+      <div class="grid cols-3">
+        <div class="field">
+          <label>年税額（固定資産税＋都市計画税）</label>
+          <div class="input-with-unit">
+            <input class="input num" data-k="settle.annualTax" data-type="num" placeholder="0" />
+            <span class="unit">円</span>
+          </div>
+          <div class="hint derived" id="settle-annual-man">— 万円</div>
+        </div>
+        <div class="field">
+          <label>売主負担日数</label>
+          <div class="input-with-unit">
+            <input class="input num readonly" id="settle-seller-days" readonly />
+            <span class="unit">日</span>
+          </div>
+          <div class="hint" id="settle-seller-range">— 〜 —</div>
+        </div>
+        <div class="field">
+          <label>買主負担日数</label>
+          <div class="input-with-unit">
+            <input class="input num readonly" id="settle-buyer-days" readonly />
+            <span class="unit">日</span>
+          </div>
+          <div class="hint" id="settle-buyer-range">— 〜 —</div>
+        </div>
+      </div>
+
+      <div class="grid cols-2" style="margin-top:10px">
+        <div class="field">
+          <label>売主負担額（年税額 × 売主日数 ÷ 365）</label>
+          <div class="input-with-unit">
+            <input class="input num readonly" id="settle-seller-amount" readonly />
+            <span class="unit">円</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>買主負担額（年税額 × 買主日数 ÷ 365）</label>
+          <div class="input-with-unit">
+            <input class="input num readonly" id="settle-buyer-amount" readonly />
+            <span class="unit">円</span>
+          </div>
+          <div class="hint derived" style="color:var(--accent)">→ 売主への清算金として支払い</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────── 残代金 ─────────── -->
+  <div class="section">
+    <div class="section-head">
+      <h2>残代金</h2>
+      <span class="ribbon">REMAINING BALANCE</span>
+    </div>
+    <div class="section-body">
+
+      <div class="grid cols-3">
+        <div class="field">
+          <label>売買代金</label>
+          <div class="input-with-unit">
+            <input class="input num readonly" id="settle-totalPrice" readonly />
+            <span class="unit">円</span>
+          </div>
+          <div class="hint derived" id="settle-totalPrice-man">— 万円 <span style="color:var(--accent-2)">（STEP01の仕入価格を自動反映）</span></div>
+        </div>
+        <div class="field">
+          <label>手付金</label>
+          <div class="input-with-unit">
+            <input class="input num" data-k="settle.deposit" data-type="num" placeholder="0" />
+            <span class="unit">円</span>
+          </div>
+          <div class="hint derived" id="settle-deposit-man">— 万円</div>
+        </div>
+        <div class="field">
+          <label>残代金（売買代金 − 手付金）</label>
+          <div class="input-with-unit">
+            <input class="input num readonly" id="settle-balance" readonly />
+            <span class="unit">円</span>
+          </div>
+          <div class="hint derived" id="settle-balance-man">— 万円</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────── 売主への支払明細 ─────────── -->
+  <div class="section">
+    <div class="section-head">
+      <h2>売主への支払明細</h2>
+      <span class="ribbon">PAY TO SELLER</span>
+    </div>
+    <div class="section-body">
+
+      <table class="settle-table">
+        <tbody>
+          <tr><td>残代金</td><td class="num" id="settle-payseller-balance">—</td><td class="num-unit">円</td></tr>
+          <tr><td>固都税清算金</td><td class="num" id="settle-payseller-tax">—</td><td class="num-unit">円</td></tr>
+          <tr class="settle-total-row"><td>合計</td><td class="num" id="settle-payseller-total">—</td><td class="num-unit">円</td></tr>
+        </tbody>
+      </table>
+
+      <div class="divider"></div>
+
+      <div class="field" style="margin-bottom:10px">
+        <label style="font-size:12px; font-weight:600; color:var(--accent-2); letter-spacing:0.04em">振込先・金種</label>
+      </div>
+      <div class="dyn-list" id="settle-transfers-list"></div>
+      <button class="dyn-add" id="add-settle-transfer">+ 振込先を追加</button>
+
+      <table class="settle-table" style="margin-top:14px">
+        <tbody>
+          <tr class="settle-total-row"><td>振込合計</td><td class="num" id="settle-transfer-total">—</td><td class="num-unit">円</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ─────────── 弊社支払明細・必要現金明細 ─────────── -->
+  <div class="section">
+    <div class="section-head">
+      <h2>弊社支払明細／必要現金明細</h2>
+      <span class="ribbon">CASH REQUIREMENT</span>
+    </div>
+    <div class="section-body">
+
+      <table class="settle-table">
+        <tbody>
+          <tr><td>売主への支払（金種合計）</td><td class="num" id="settle-pay-toseller">—</td><td class="num-unit">円</td></tr>
+          <tr>
+            <td>登記費用 <span class="settle-acct" id="settle-acct-reg" contenteditable="true" data-k="settle.acct_reg">三菱UFJ銀行 新宿通支店</span></td>
+            <td class="num"><input class="input num inline-cell" data-k="settle.cost_reg" data-type="num" placeholder="0" /></td>
+            <td class="num-unit">円</td>
+          </tr>
+          <tr>
+            <td>仲介手数料 <span class="settle-acct" contenteditable="true" data-k="settle.acct_broker">住友不動産ステップ株式会社</span></td>
+            <td class="num"><input class="input num inline-cell" data-k="settle.cost_broker" data-type="num" placeholder="0" /></td>
+            <td class="num-unit">円</td>
+          </tr>
+          <tr>
+            <td>融資手数料</td>
+            <td class="num"><input class="input num inline-cell" data-k="settle.cost_loanFee" data-type="num" placeholder="0" /></td>
+            <td class="num-unit">円</td>
+          </tr>
+          <tr>
+            <td>金消印紙代</td>
+            <td class="num"><input class="input num inline-cell" data-k="settle.cost_loanStamp" data-type="num" placeholder="0" /></td>
+            <td class="num-unit">円</td>
+          </tr>
+          <tr>
+            <td><input class="input inline-cell" data-k="settle.cost_otherLabel" placeholder="その他項目名" /></td>
+            <td class="num"><input class="input num inline-cell" data-k="settle.cost_other" data-type="num" placeholder="0" /></td>
+            <td class="num-unit">円</td>
+          </tr>
+          <tr class="settle-total-row"><td>払出合計</td><td class="num" id="settle-payout-total">—</td><td class="num-unit">円</td></tr>
+          <tr><td>融資額</td>
+            <td class="num"><input class="input num inline-cell" data-k="settle.loanAmount" data-type="num" placeholder="0" /></td>
+            <td class="num-unit">円</td>
+          </tr>
+          <tr class="settle-cash-row"><td>必要現金</td><td class="num" id="settle-cash-required">—</td><td class="num-unit">円</td></tr>
+        </tbody>
+      </table>
+
+      <div class="kpi-grid kpi-3" style="margin-top:18px">
+        <div class="kpi">
+          <div class="k-label">売主支払合計</div>
+          <div class="k-value" id="settle-kpi-seller">—<span class="k-unit"> 円</span></div>
+          <div class="k-sub" id="settle-kpi-seller-sub">— 万円</div>
+        </div>
+        <div class="kpi">
+          <div class="k-label">払出合計</div>
+          <div class="k-value" id="settle-kpi-payout">—<span class="k-unit"> 円</span></div>
+          <div class="k-sub" id="settle-kpi-payout-sub">— 万円</div>
+        </div>
+        <div class="kpi dark">
+          <div class="k-label">必要現金</div>
+          <div class="k-value" id="settle-kpi-cash">—<span class="k-unit"> 円</span></div>
+          <div class="k-sub" id="settle-kpi-cash-sub">— 万円</div>
+        </div>
+      </div>
+
+      <p class="hint" style="margin-top:10px">
+        ※ 売買代金・仲介手数料は <b>STEP01／STEP02</b> から自動反映されます。<br>
+        ※ 登記費用・融資手数料・金消印紙等は STEP02 の事業計画タブの値が初期値として転記されます。各セルで直接編集可。
+      </p>
+    </div>
+  </div>
+
+</section>
+
 </main>
 
 <!-- ─────────── MODAL: MEMO ─────────── -->
@@ -2236,6 +2887,7 @@ function defaultState(){
       road:'', fire:'', otherReg:'',
       demolitionFlag:'none', demolitionCost:0,
       brokerBuyFlag:'none',
+      freeItems:[],   // [{label, amount}] — マイナス計上の自由項目
       notes:''
     },
     plan: {
@@ -2272,6 +2924,27 @@ function defaultState(){
     dev: {
       vacancy:5, repair:200000,
       units:[]
+    },
+    settle: {
+      propertyName:'', bank:'',
+      settleDate:'', settleTime:'', settleVenue:'',
+      // Document checklist
+      chk_passbook:false, chk_seal:false, chk_cashSlip:false, chk_settleSlip:false,
+      chk_regCost:false, chk_broker:false, chk_misc:false,
+      chk_regCert:false, chk_sealCert:false, chk_evalCert:false, chk_dealConfirm:false,
+      // 固都税清算金
+      annualTax:0,
+      // 残代金
+      deposit:0,
+      // 振込先 (multiple)
+      transfers:[{label:'振込', amount:0, bank:'', branch:'', account:'', name:'', fee:550}],
+      // 払出明細
+      acct_reg:'', cost_reg:0,
+      acct_broker:'', cost_broker:0,
+      cost_loanFee:0,
+      cost_loanStamp:0,
+      cost_otherLabel:'', cost_other:0,
+      loanAmount:0
     }
   };
 }
@@ -2525,6 +3198,8 @@ function renderTab1(){
   renderComps();
   // Comp PDFs
   renderCompPdfs();
+  // Free items
+  renderFreeItems();
   // Sync inputs from state
   syncInputsFromState();
   // Map
@@ -2907,6 +3582,285 @@ function closePdfViewer(){
   if (body) body.innerHTML = '';
 }
 
+/* ════════════════════════════════════════════════
+ *  FREE ITEMS (土地条件・法規制 → 自由項目)
+ *  粗利からマイナス計上される項目を任意に追加
+ * ════════════════════════════════════════════════ */
+function renderFreeItems(){
+  const list = document.getElementById('free-items-list');
+  if (!list) return;
+  list.innerHTML = '';
+  if (!Array.isArray(state.project.freeItems)) state.project.freeItems = [];
+  state.project.freeItems.forEach((it, i) => {
+    const row = document.createElement('div');
+    row.className = 'dyn-row';
+    row.style.gridTemplateColumns = '2fr 1fr auto';
+    row.innerHTML = `
+      <input class="input" placeholder="項目名（例：立ち退き料／測量費／補修費）" value="${escAttr(it.label||'')}" data-fi-key="label" data-idx="${i}" />
+      <div class="input-with-unit">
+        <input class="input num" placeholder="0" value="${it.amount ? Number(it.amount).toLocaleString('ja-JP') : ''}" data-fi-key="amount" data-idx="${i}" />
+        <span class="unit">円</span>
+      </div>
+      <button class="rm" data-rm-fi="${i}">×</button>
+    `;
+    list.appendChild(row);
+  });
+  list.querySelectorAll('input[data-fi-key]').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const i = +e.target.dataset.idx;
+      const k = e.target.dataset.fiKey;
+      const v = (k === 'amount') ? num(e.target.value) : e.target.value;
+      state.project.freeItems[i][k] = v;
+      // Only recompute, don't re-render row (preserve focus)
+      updatePlanComputed();
+      persistCurrent();
+    });
+    if (inp.dataset.fiKey === 'amount') {
+      inp.addEventListener('focus', e => {
+        const i = +e.target.dataset.idx;
+        const v = state.project.freeItems[i].amount;
+        if (v) e.target.value = String(v);
+      });
+      inp.addEventListener('blur', e => {
+        const i = +e.target.dataset.idx;
+        const v = num(state.project.freeItems[i].amount);
+        if (v) e.target.value = Number(v).toLocaleString('ja-JP');
+      });
+    }
+  });
+  list.querySelectorAll('[data-rm-fi]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const i = +e.currentTarget.dataset.rmFi;
+      state.project.freeItems.splice(i, 1);
+      renderFreeItems();
+      updatePlanComputed();
+      persistCurrent();
+    });
+  });
+  // Total display
+  const total = (state.project.freeItems || []).reduce((s, it) => s + num(it.amount), 0);
+  const hint = document.getElementById('hint-free-items-total');
+  if (hint) {
+    hint.innerHTML = total
+      ? `合計：<span style="color:var(--accent); font-family:var(--mono)">−${fmt(total)} 円</span>（${fmtMan(total)}）`
+      : '合計：— 円';
+  }
+}
+
+function freeItemsTotal(){
+  return (state.project.freeItems || []).reduce((s, it) => s + num(it.amount), 0);
+}
+
+/* ════════════════════════════════════════════════
+ *  SETTLEMENT (STEP04) — 決済明細書
+ * ════════════════════════════════════════════════ */
+function daysBetween(d1, d2){
+  // Inclusive both ends
+  const t1 = new Date(d1).getTime();
+  const t2 = new Date(d2).getTime();
+  if (isNaN(t1) || isNaN(t2)) return 0;
+  return Math.floor((t2 - t1) / (24*60*60*1000)) + 1;
+}
+
+function renderTab4(){
+  // 1. Mirror from STEP01/STEP02
+  mirrorToSettle();
+  // 2. Render dynamic lists
+  renderSettleTransfers();
+  // 3. Sync values
+  syncInputsFromState();
+  // 4. Compute & display
+  updateSettleComputed();
+}
+
+function mirrorToSettle(){
+  // Defensive: ensure settle structure exists (in case sample data was loaded)
+  if (!state.settle) {
+    const d = defaultState();
+    state.settle = JSON.parse(JSON.stringify(d.settle));
+  }
+  if (!Array.isArray(state.settle.transfers) || !state.settle.transfers.length) {
+    state.settle.transfers = [{label:'振込', amount:0, bank:'', branch:'', account:'', name:'', fee:550}];
+  }
+  const s = state.settle;
+  const p = state.project;
+  const b = state.biz;
+  // Don't overwrite user edits — only fill blanks
+  if (!s.propertyName && p.name) s.propertyName = p.name;
+  if (!s.settleDate && b.dateSettleBuy) s.settleDate = b.dateSettleBuy;
+
+  // Pre-fill costs from biz tab when blank
+  let r;
+  try { r = computeBiz(); } catch(e){ r = null; }
+  if (r && r.computed) {
+    if (!s.cost_reg) {
+      // 登記費用 ≒ 登録免許税 + 抵当権設定 + 司法書士報酬
+      const regSum = Math.round(
+        num(r.computed.L_regLand) + num(r.computed.L_regBldg) +
+        num(r.computed.L_mortgage) +
+        num((state.biz.costs.L_judFee||{}).value)
+      );
+      if (regSum > 0) s.cost_reg = regSum;
+    }
+    if (!s.cost_broker) {
+      s.cost_broker = Math.round(num(r.computed.L_broker));
+    }
+    if (!s.cost_loanFee) {
+      s.cost_loanFee = Math.round(num(r.computed.L_loanFee));
+    }
+    if (!s.cost_loanStamp) {
+      s.cost_loanStamp = num((state.biz.costs.L_loanStamp||{}).value);
+    }
+    if (!s.loanAmount) {
+      s.loanAmount = num(state.biz.landLoan) || num(state.biz.landBuyPrice) || num(state.project.priceTotal);
+    }
+  }
+}
+
+function renderSettleTransfers(){
+  const list = document.getElementById('settle-transfers-list');
+  if (!list) return;
+  list.innerHTML = '';
+  state.settle.transfers.forEach((tr, i) => {
+    const row = document.createElement('div');
+    row.className = 'dyn-row';
+    row.style.gridTemplateColumns = '1.4fr 1.2fr 1.2fr 1.2fr 0.6fr auto';
+    row.innerHTML = `
+      <div class="input-with-unit">
+        <input class="input num" placeholder="振込額" value="${tr.amount ? Number(tr.amount).toLocaleString('ja-JP') : ''}" data-tr-key="amount" data-idx="${i}" />
+        <span class="unit">円</span>
+      </div>
+      <input class="input" placeholder="銀行名" value="${escAttr(tr.bank||'')}" data-tr-key="bank" data-idx="${i}" />
+      <input class="input" placeholder="支店名・口座" value="${escAttr(tr.branch||'')}" data-tr-key="branch" data-idx="${i}" />
+      <input class="input" placeholder="受取人名" value="${escAttr(tr.name||'')}" data-tr-key="name" data-idx="${i}" />
+      <div class="input-with-unit">
+        <input class="input num" placeholder="手数料" value="${tr.fee || ''}" data-tr-key="fee" data-idx="${i}" />
+        <span class="unit">円</span>
+      </div>
+      <button class="rm" data-rm-tr="${i}">×</button>
+    `;
+    list.appendChild(row);
+  });
+  list.querySelectorAll('input[data-tr-key]').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const i = +e.target.dataset.idx;
+      const k = e.target.dataset.trKey;
+      const v = (k === 'amount' || k === 'fee') ? num(e.target.value) : e.target.value;
+      state.settle.transfers[i][k] = v;
+      updateSettleComputed();
+      persistCurrent();
+    });
+    if (inp.dataset.trKey === 'amount' || inp.dataset.trKey === 'fee') {
+      inp.addEventListener('focus', e => {
+        const i = +e.target.dataset.idx;
+        const k = e.target.dataset.trKey;
+        const v = state.settle.transfers[i][k];
+        if (v) e.target.value = String(v);
+      });
+      inp.addEventListener('blur', e => {
+        const i = +e.target.dataset.idx;
+        const k = e.target.dataset.trKey;
+        const v = num(state.settle.transfers[i][k]);
+        if (v) e.target.value = Number(v).toLocaleString('ja-JP');
+      });
+    }
+  });
+  list.querySelectorAll('[data-rm-tr]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const i = +e.currentTarget.dataset.rmTr;
+      state.settle.transfers.splice(i, 1);
+      if (!state.settle.transfers.length) {
+        state.settle.transfers.push({label:'振込', amount:0, bank:'', branch:'', account:'', name:'', fee:550});
+      }
+      renderSettleTransfers();
+      updateSettleComputed();
+      persistCurrent();
+    });
+  });
+}
+
+function updateSettleComputed(){
+  const s = state.settle;
+
+  // 1. Tax proration
+  const settleDate = s.settleDate;
+  let sellerDays = 0, buyerDays = 0, sellerRange = '—', buyerRange = '—';
+  if (settleDate) {
+    const d = new Date(settleDate);
+    const year = d.getFullYear();
+    const dayBefore = new Date(d); dayBefore.setDate(d.getDate() - 1);
+    const yearStart = new Date(year, 0, 1);
+    const yearEnd = new Date(year, 11, 31);
+    sellerDays = daysBetween(yearStart, dayBefore);
+    buyerDays = daysBetween(d, yearEnd);
+    sellerRange = `${year}年1月1日 〜 ${dayBefore.getFullYear()}年${dayBefore.getMonth()+1}月${dayBefore.getDate()}日`;
+    buyerRange = `${year}年${d.getMonth()+1}月${d.getDate()}日 〜 ${year}年12月31日`;
+  }
+  const annualTax = num(s.annualTax);
+  const sellerAmount = Math.round(annualTax * sellerDays / 365);
+  const buyerAmount = Math.round(annualTax * buyerDays / 365);
+
+  setText('settle-annual-man', annualTax ? fmtMan(annualTax) : '— 万円');
+  setVal('settle-seller-days', sellerDays || '');
+  setVal('settle-buyer-days', buyerDays || '');
+  setText('settle-seller-range', sellerRange);
+  setText('settle-buyer-range', buyerRange);
+  setVal('settle-seller-amount', sellerAmount ? Number(sellerAmount).toLocaleString('ja-JP') : '');
+  setVal('settle-buyer-amount', buyerAmount ? Number(buyerAmount).toLocaleString('ja-JP') : '');
+
+  // 2. Balance
+  const totalPrice = num(state.project.priceTotal);
+  const deposit = num(s.deposit);
+  const balance = Math.max(0, totalPrice - deposit);
+  setVal('settle-totalPrice', totalPrice ? Number(totalPrice).toLocaleString('ja-JP') : '');
+  setText('settle-totalPrice-man', totalPrice ? fmtMan(totalPrice) + ' （STEP01の仕入価格を自動反映）' : '— 万円（STEP01の仕入価格を自動反映）');
+  setText('settle-deposit-man', deposit ? fmtMan(deposit) : '— 万円');
+  setVal('settle-balance', balance ? Number(balance).toLocaleString('ja-JP') : '');
+  setText('settle-balance-man', balance ? fmtMan(balance) : '— 万円');
+
+  // 3. Pay to seller (残代金 + 買主負担固都税)
+  const paySellerTotal = balance + buyerAmount;
+  setText('settle-payseller-balance', balance ? Number(balance).toLocaleString('ja-JP') : '0');
+  setText('settle-payseller-tax', buyerAmount ? Number(buyerAmount).toLocaleString('ja-JP') : '0');
+  setText('settle-payseller-total', paySellerTotal ? Number(paySellerTotal).toLocaleString('ja-JP') : '0');
+
+  // 4. Transfer total
+  const transferTotal = state.settle.transfers.reduce((sum, tr) => sum + num(tr.amount), 0);
+  setText('settle-transfer-total', transferTotal ? Number(transferTotal).toLocaleString('ja-JP') : '0');
+
+  // 5. Payout total (everything paid out)
+  const costReg = num(s.cost_reg);
+  const costBroker = num(s.cost_broker);
+  const costLoanFee = num(s.cost_loanFee);
+  const costLoanStamp = num(s.cost_loanStamp);
+  const costOther = num(s.cost_other);
+  const payoutTotal = transferTotal + costReg + costBroker + costLoanFee + costLoanStamp + costOther;
+  setText('settle-pay-toseller', transferTotal ? Number(transferTotal).toLocaleString('ja-JP') : '0');
+  setText('settle-payout-total', payoutTotal ? Number(payoutTotal).toLocaleString('ja-JP') : '0');
+
+  // 6. Cash required
+  const loan = num(s.loanAmount);
+  const cashRequired = Math.max(0, payoutTotal - loan);
+  setText('settle-cash-required', cashRequired ? Number(cashRequired).toLocaleString('ja-JP') : '0');
+
+  // KPIs
+  document.getElementById('settle-kpi-seller').innerHTML = (paySellerTotal ? Number(paySellerTotal).toLocaleString('ja-JP') : '—') + '<span class="k-unit"> 円</span>';
+  document.getElementById('settle-kpi-seller-sub').textContent = paySellerTotal ? fmtMan(paySellerTotal) : '— 万円';
+  document.getElementById('settle-kpi-payout').innerHTML = (payoutTotal ? Number(payoutTotal).toLocaleString('ja-JP') : '—') + '<span class="k-unit"> 円</span>';
+  document.getElementById('settle-kpi-payout-sub').textContent = payoutTotal ? fmtMan(payoutTotal) : '— 万円';
+  document.getElementById('settle-kpi-cash').innerHTML = (cashRequired ? Number(cashRequired).toLocaleString('ja-JP') : '—') + '<span class="k-unit"> 円</span>';
+  document.getElementById('settle-kpi-cash-sub').textContent = cashRequired ? fmtMan(cashRequired) : '— 万円';
+}
+
+function setText(id, txt){
+  const el = document.getElementById(id);
+  if (el) el.textContent = txt;
+}
+function setVal(id, v){
+  const el = document.getElementById(id);
+  if (el) el.value = v;
+}
+
 function updatePlanComputed(){
   const p = state.plan;
   const proj = state.project;
@@ -2945,9 +3899,10 @@ function updatePlanComputed(){
   const hintBrokerBuy = document.getElementById('hint-broker-buy');
   if (hintBrokerBuy) hintBrokerBuy.textContent = brokerBuy ? fmtMan(brokerBuy) : '— 万円';
 
-  // ── Land all-in cost (including demolition + broker) ──
+  // ── Land all-in cost (including demolition + broker + free items) ──
+  const freeItemsSum = freeItemsTotal();
   const land = num(proj.priceTotal);
-  const landAllIn = land + demolition + brokerBuy;
+  const landAllIn = land + demolition + brokerBuy + freeItemsSum;
 
   // ── Building yield (actual = annual / (land all-in + build)) ──
   const totalDevCost = landAllIn + buildCost;
@@ -2976,7 +3931,12 @@ function updatePlanComputed(){
   document.getElementById('planA-land-resale').value = fmt(landResale);
   document.getElementById('planA-land-resale-sub').textContent = landResale ? `${fmtMan(landResale)} ＝ 総事業費 − 建築費` : '＝ 総事業費 − 建築費';
   document.getElementById('planA-land-profit').value = fmt(landProfit);
-  const allInDesc = (demolition || brokerBuy) ? `（仕入${fmtMan(land)}＋解体${fmtMan(demolition)}＋仲手${fmtMan(brokerBuy)}）` : '';
+  const allInParts = [];
+  if (land) allInParts.push(`仕入${fmtMan(land)}`);
+  if (demolition) allInParts.push(`解体${fmtMan(demolition)}`);
+  if (brokerBuy) allInParts.push(`仲手${fmtMan(brokerBuy)}`);
+  if (freeItemsSum) allInParts.push(`自由項目${fmtMan(freeItemsSum)}`);
+  const allInDesc = allInParts.length > 1 ? `（${allInParts.join('＋')}）` : '';
   document.getElementById('planA-land-profit-sub').textContent = landProfit ? `${fmtMan(landProfit)} ＝ 再販 − 仕入総額${allInDesc}` : '＝ 再販 − 仕入総額';
   document.getElementById('planA-target-y').textContent = (num(p.buyerYield)).toFixed(1);
 
@@ -3065,10 +4025,35 @@ function updateMap(){
       // Skip if address is unchanged (e.g. tab switch revisits same address)
       if (src === _lastMapSrc) return;
       _lastMapSrc = src;
-      wrap.innerHTML = `<iframe src="${src}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
+      // The iframe shows the live map on screen. The .map-print-fallback element
+      // sits behind it and only becomes visible in print when the iframe fails
+      // to render (e.g. Firefox or offline). The .map-print-address line below
+      // is always shown in print as an additional textual locator.
+      const mapsLink = 'https://www.google.com/maps?q=' + encodeURIComponent(addr);
+      wrap.innerHTML = `
+        <div class="map-print-fallback">
+          <div class="mpf-pin">📍</div>
+          <div class="mpf-addr">${escAttr(addr)}</div>
+          <div class="mpf-url">${mapsLink}</div>
+        </div>
+        <iframe src="${src}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      `;
+      // Also add the address line below the map wrap if not present
+      const parent = wrap.parentNode;
+      let printAddr = parent.querySelector('.map-print-address');
+      if (!printAddr) {
+        printAddr = document.createElement('div');
+        printAddr.className = 'map-print-address';
+        wrap.insertAdjacentElement('afterend', printAddr);
+      }
+      printAddr.textContent = '📍 ' + addr;
     } else {
       _lastMapSrc = '';
       wrap.innerHTML = '<div class="map-empty">住居表示を入力するとマップが表示されます</div>';
+      // Remove any leftover print-address element
+      const parent = wrap.parentNode;
+      const printAddr = parent.querySelector('.map-print-address');
+      if (printAddr) printAddr.remove();
     }
   }, 500);
 }
@@ -3457,7 +4442,10 @@ function syncInputsFromState(){
     const path = el.dataset.k;
     const v = getPath(state, path);
     if (v === undefined || v === null) return;
-    if (el.dataset.type === 'num') {
+    if (el.dataset.type === 'bool') {
+      const want = !!v;
+      if (el.checked !== want) el.checked = want;
+    } else if (el.dataset.type === 'num') {
       // Show comma-separated value when not focused; raw when focused
       const raw = (v === 0 ? '' : String(v));
       const formatted = (v === 0 || v === '') ? '' : Number(v).toLocaleString('ja-JP', {maximumFractionDigits:6});
@@ -3471,6 +4459,13 @@ function syncInputsFromState(){
 
 function bindStateInputs(){
   document.querySelectorAll('[data-k]').forEach(el => {
+    if (el.dataset.type === 'bool') {
+      el.addEventListener('change', e => {
+        setPath(state, el.dataset.k, e.target.checked);
+        onAnyChange(el.dataset.k);
+      });
+      return;
+    }
     el.addEventListener('input', e => {
       const path = el.dataset.k;
       const v = el.dataset.type === 'num' ? num(el.value) : el.value;
@@ -3515,6 +4510,9 @@ function onAnyChange(path){
     updateDevComputed();
     renderSensitivity();
   }
+  if (path && path.startsWith('settle.') || path === 'project.priceTotal') {
+    if (document.querySelector('.panel[data-panel="4"].active')) updateSettleComputed();
+  }
   syncInputsFromState();
 }
 
@@ -3531,6 +4529,8 @@ function switchTab(n){
   } else if (n === '3' || n === 3) {
     regenDevUnits();
     renderTab3();
+  } else if (n === '4' || n === 4) {
+    renderTab4();
   } else {
     renderTab1();
   }
@@ -3612,8 +4612,15 @@ function loadCurrent(){
       comps:   Array.isArray(obj.comps) ? obj.comps : def.comps,
       compPdfs: Array.isArray(obj.compPdfs) ? obj.compPdfs : def.compPdfs,
       biz:     Object.assign({}, def.biz, obj.biz || {}),
-      dev:     Object.assign({}, def.dev, obj.dev || {})
+      dev:     Object.assign({}, def.dev, obj.dev || {}),
+      settle:  Object.assign({}, def.settle, obj.settle || {})
     };
+    // Ensure freeItems array exists (old saves don't have it)
+    if (!Array.isArray(state.project.freeItems)) state.project.freeItems = [];
+    // Ensure settle.transfers array exists
+    if (!Array.isArray(state.settle.transfers) || !state.settle.transfers.length) {
+      state.settle.transfers = JSON.parse(JSON.stringify(def.settle.transfers));
+    }
     // Force fixed values (in case loaded from older state)
     state.project.rights = '所有権';
     if (!state.plan.structure) state.plan.structure = '壁式RC造';
@@ -3677,8 +4684,14 @@ function buildMemo(){
   }
   if (demolition) lines.push(`解体費用：${fmt(demolition/10000)}万円`);
   if (brokerBuy) lines.push(`仲介手数料（仕入）：${fmt(brokerBuy/10000)}万円（3%+6万+税）`);
-  const landAllIn = num(p.priceTotal) + demolition + brokerBuy;
-  if (demolition || brokerBuy) {
+  // 自由項目（粗利マイナス計上）
+  const freeItems = Array.isArray(p.freeItems) ? p.freeItems : [];
+  const freeItemsSum = freeItems.reduce((s, it) => s + num(it.amount), 0);
+  freeItems.forEach(it => {
+    if (num(it.amount) > 0) lines.push(`${it.label || '自由項目'}：${fmt(num(it.amount)/10000)}万円`);
+  });
+  const landAllIn = num(p.priceTotal) + demolition + brokerBuy + freeItemsSum;
+  if (demolition || brokerBuy || freeItemsSum) {
     lines.push(`仕入総額（all-in）：${fmt(landAllIn/10000)}万円`);
   }
   if (p.zoning) lines.push(`用途：${p.zoning}（${p.coverage||'—'}/${p.far||'—'}）`);
@@ -3759,6 +4772,9 @@ const SAMPLES = {
       coverage:80, far:360,
       road:'幅員6m',
       fire:'準防火地域', otherReg:'高度日影なし。都市計画情報の土地区画整理事業に「完成」の文言がある場合は認定幅員優先。',
+      demolitionFlag:'manual', demolitionCost:8000000,
+      brokerBuyFlag:'auto3',
+      freeItems:[],
       notes:'現況空渡し。プラン：地下1階地上5階10戸（メゾ以外29.84㎡8戸＝ワンルーム条例回避可）。専有：358.08㎡=59.68㎡×2戸+29.84㎡×8戸。'
     },
     plan: {
@@ -3816,6 +4832,12 @@ const SAMPLES = {
       coverage:80, far:500,
       road:'南西側幅員約5.99m',
       fire:'防火地域', otherReg:'埋蔵文化財なし',
+      demolitionFlag:'manual', demolitionCost:12000000,
+      brokerBuyFlag:'auto3',
+      freeItems:[
+        {label:'立ち退き料', amount:5000000},
+        {label:'確定測量費', amount:800000}
+      ],
       notes:'現況＝平成15年7月築、鉄骨造3層 延床面積171.69㎡。立ち退き後、空渡し。立ち退きに半年もかからない予定（軽い立ち退きのため）。確定測量確認中。'
     },
     plan: {
@@ -3864,8 +4886,16 @@ const SAMPLES = {
 function loadSample(key){
   const s = SAMPLES[key];
   if (!s) return;
+  const def = defaultState();
   // Deep clone to avoid mutating the template
   state = JSON.parse(JSON.stringify(s));
+  // Ensure structures introduced after the samples were authored exist
+  if (!state.settle) state.settle = JSON.parse(JSON.stringify(def.settle));
+  if (!Array.isArray(state.settle.transfers) || !state.settle.transfers.length) {
+    state.settle.transfers = JSON.parse(JSON.stringify(def.settle.transfers));
+  }
+  if (!Array.isArray(state.project.freeItems)) state.project.freeItems = [];
+  if (!Array.isArray(state.compPdfs)) state.compPdfs = [];
   // Auto-calc annual income from manual plan inputs
   const annual = num(state.plan.unitArea) * num(state.plan.rentPerSqm) * 12;
   state.biz.annualIncome = Math.round(annual);
@@ -3894,6 +4924,29 @@ function wireUp(){
   document.getElementById('add-comp').addEventListener('click', () => {
     state.comps.push({name:'', rent:0, area:0}); renderComps();
   });
+  // Free items (土地条件 → 自由項目)
+  const addFreeItemBtn = document.getElementById('add-free-item');
+  if (addFreeItemBtn) {
+    addFreeItemBtn.addEventListener('click', () => {
+      if (!Array.isArray(state.project.freeItems)) state.project.freeItems = [];
+      state.project.freeItems.push({label:'', amount:0});
+      renderFreeItems();
+      updatePlanComputed();
+      persistCurrent();
+    });
+  }
+  // Settle transfers (STEP04 → 振込先)
+  const addTransferBtn = document.getElementById('add-settle-transfer');
+  if (addTransferBtn) {
+    addTransferBtn.addEventListener('click', () => {
+      if (!state.settle) state.settle = {};
+      if (!Array.isArray(state.settle.transfers)) state.settle.transfers = [];
+      state.settle.transfers.push({label:'振込', amount:0, bank:'', branch:'', account:'', name:'', fee:550});
+      renderSettleTransfers();
+      updateSettleComputed();
+      persistCurrent();
+    });
+  }
 
   // PDF upload (comp section)
   const pdfInput = document.getElementById('comp-pdf-input');
@@ -4013,14 +5066,48 @@ function wireUp(){
     });
   });
 
-  // Print
-  document.getElementById('btn-print').addEventListener('click', () => {
-    // Make sure all panels are rendered before printing
-    mirrorProjectToBizBlank();
-    renderTab2();
-    regenDevUnits();
-    renderTab3();
-    setTimeout(() => window.print(), 200);
+  // Print dropdown menu
+  const printBtn = document.getElementById('btn-print');
+  const printMenu = document.getElementById('print-menu');
+  printBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    printMenu.classList.toggle('open');
+  });
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.print-menu')) printMenu.classList.remove('open');
+  });
+  document.querySelectorAll('.print-menu-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const scope = btn.dataset.printScope;
+      // Render all tabs so all panels have content
+      mirrorProjectToBizBlank();
+      renderTab1();
+      renderTab2();
+      regenDevUnits();
+      renderTab3();
+      renderTab4();
+      syncInputsFromState();
+      // Apply scope class (only the selected panel will print)
+      document.body.classList.remove('print-scope-1','print-scope-2','print-scope-3','print-scope-4');
+      if (scope !== 'all') document.body.classList.add('print-scope-' + scope);
+      printMenu.classList.remove('open');
+
+      // Wait longer when STEP01 is in scope (it contains the map iframe).
+      // The iframe needs ~600ms to fetch tiles from Google Maps before print.
+      const includesMap = (scope === '1' || scope === 'all');
+      const delay = includesMap ? 800 : 200;
+
+      // Show a brief progress toast for the map case
+      if (includesMap && typeof showToast === 'function') {
+        showToast('印刷プレビューを準備中…（マップ読込中）');
+      }
+
+      setTimeout(() => {
+        window.print();
+        // Clean up the print-scope class after print so the live UI isn't affected
+        document.body.classList.remove('print-scope-1','print-scope-2','print-scope-3','print-scope-4');
+      }, delay);
+    });
   });
 
   // Export self-contained share HTML (for Slack)
@@ -4144,6 +5231,7 @@ const SECTION_RESET_MAP = {
     state.project.demolitionFlag = d.project.demolitionFlag;
     state.project.demolitionCost = d.project.demolitionCost;
     state.project.brokerBuyFlag = d.project.brokerBuyFlag;
+    state.project.freeItems = [];
     state.project.notes = d.project.notes;
   },
   '想定プラン・建築費逆算': () => {
@@ -4211,6 +5299,35 @@ const SECTION_RESET_MAP = {
   '運営費・NOI': () => {
     state.dev.vacancy = 5;
     state.dev.repair = 200000;
+  },
+  // Tab 4 (決済明細書)
+  '決済明細書 — 仕入': () => {
+    const d = defaultState();
+    Object.assign(state.settle, {
+      propertyName:'', bank:'',
+      settleDate:'', settleTime:'', settleVenue:'',
+      chk_passbook:false, chk_seal:false, chk_cashSlip:false, chk_settleSlip:false,
+      chk_regCost:false, chk_broker:false, chk_misc:false,
+      chk_regCert:false, chk_sealCert:false, chk_evalCert:false, chk_dealConfirm:false
+    });
+  },
+  '固都税清算金明細': () => {
+    state.settle.annualTax = 0;
+  },
+  '残代金': () => {
+    state.settle.deposit = 0;
+  },
+  '売主への支払明細': () => {
+    state.settle.transfers = [{label:'振込', amount:0, bank:'', branch:'', account:'', name:'', fee:550}];
+  },
+  '弊社支払明細／必要現金明細': () => {
+    Object.assign(state.settle, {
+      acct_reg:'', cost_reg:0,
+      acct_broker:'', cost_broker:0,
+      cost_loanFee:0, cost_loanStamp:0,
+      cost_otherLabel:'', cost_other:0,
+      loanAmount:0
+    });
   }
 };
 
@@ -4231,6 +5348,7 @@ function resetSection(sec){
   const tabNum = activePanel ? activePanel.dataset.panel : '1';
   if (tabNum === '2') renderTab2();
   else if (tabNum === '3') { regenDevUnits(); renderTab3(); }
+  else if (tabNum === '4') renderTab4();
   else renderTab1();
   showToast(`「${title}」をリセットしました`);
 }
@@ -4321,6 +5439,7 @@ function exportShareHtml(){
     renderTab2();
     regenDevUnits();
     renderTab3();
+    renderTab4();
     syncInputsFromState();
 
     // 0.5. Force-write every form-field's CURRENT value into the corresponding HTML
@@ -4450,7 +5569,8 @@ function enableReportMode(){
   const stepLabels = {
     '1': { num: 'STEP 01', title: '仕入れ検討', sub: 'Acquisition Review' },
     '2': { num: 'STEP 02', title: '事業計画', sub: 'Business Plan' },
-    '3': { num: 'STEP 03', title: '企画開発', sub: 'Development Planning' }
+    '3': { num: 'STEP 03', title: '企画開発', sub: 'Development Planning' },
+    '4': { num: 'STEP 04', title: '決済明細書', sub: 'Settlement Statement' }
   };
   panels.forEach(p => {
     const n = p.dataset.panel;
@@ -4483,8 +5603,13 @@ function init(){
         comps:   Array.isArray(obj.comps) ? obj.comps : def.comps,
         compPdfs: Array.isArray(obj.compPdfs) ? obj.compPdfs : def.compPdfs,
         biz:     Object.assign({}, def.biz, obj.biz || {}),
-        dev:     Object.assign({}, def.dev, obj.dev || {})
+        dev:     Object.assign({}, def.dev, obj.dev || {}),
+        settle:  Object.assign({}, def.settle, obj.settle || {})
       };
+      if (!Array.isArray(state.project.freeItems)) state.project.freeItems = [];
+      if (!Array.isArray(state.settle.transfers) || !state.settle.transfers.length) {
+        state.settle.transfers = JSON.parse(JSON.stringify(def.settle.transfers));
+      }
       state.project.rights = '所有権';
       if (!state.plan.structure) state.plan.structure = '壁式RC造';
       if (!state.biz.structure) state.biz.structure = '壁式RC造';
@@ -4517,6 +5642,7 @@ function init(){
     renderTab1();
     renderTab2();
     renderTab3();
+    renderTab4();
     syncInputsFromState();
     // Switch to single-page report layout
     enableReportMode();
